@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerberos Attacks — Red Team Cheat Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --bg2: #080f18;
+    --panel: #0b1520;
+    --border: #0f2a3f;
+    --accent: #00d4ff;
+    --accent2: #ff3e6c;
+    --accent3: #00ff9d;
+    --accent4: #ffb700;
+    --text: #c8dae8;
+    --muted: #4a6a7a;
+    --grid: rgba(0,212,255,0.04);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Radial glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80vw;
+    height: 60vh;
+    background: radial-gradient(ellipse, rgba(0,212,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 50px;
+    position: relative;
+  }
+
+  .header-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 900;
+    background: linear-gradient(135deg, #00d4ff 0%, #ffffff 50%, #ff3e6c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .header-sub {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 2px;
+  }
+
+  .header-line {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 20px auto 0;
+    animation: pulse-line 3s infinite;
+  }
+
+  @keyframes pulse-line {
+    0%, 100% { opacity: 0.4; width: 150px; }
+    50% { opacity: 1; width: 250px; }
+  }
+
+  /* KILL CHAIN DIAGRAM */
+  .kill-chain {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kill-chain::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .chain-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    gap: 8px 0;
+  }
+
+  .chain-step {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .chain-box {
+    background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 3px;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent);
+    white-space: nowrap;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .chain-box:hover {
+    background: rgba(0,212,255,0.14);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
+
+  .chain-box.red {
+    background: rgba(255,62,108,0.07);
+    border-color: rgba(255,62,108,0.25);
+    color: var(--accent2);
+  }
+
+  .chain-box.red:hover {
+    background: rgba(255,62,108,0.14);
+    border-color: var(--accent2);
+    box-shadow: 0 0 12px rgba(255,62,108,0.2);
+  }
+
+  .chain-box.green {
+    background: rgba(0,255,157,0.07);
+    border-color: rgba(0,255,157,0.25);
+    color: var(--accent3);
+  }
+
+  .chain-arrow {
+    color: var(--muted);
+    font-size: 16px;
+    padding: 0 6px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ATTACK GRID */
+  .attacks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .attack-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+
+  .attack-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .attack-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+
+  .attack-card.tier-crit::before { background: var(--accent2); }
+  .attack-card.tier-high::before { background: var(--accent4); }
+  .attack-card.tier-med::before { background: var(--accent); }
+  .attack-card.tier-stealth::before { background: var(--accent3); }
+
+  .attack-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    opacity: 0.04;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(30%, -30%);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+
+  .attack-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+  }
+
+  .tier-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tier-crit .tier-badge { background: rgba(255,62,108,0.15); color: var(--accent2); border: 1px solid rgba(255,62,108,0.3); }
+  .tier-high .tier-badge { background: rgba(255,183,0,0.15); color: var(--accent4); border: 1px solid rgba(255,183,0,0.3); }
+  .tier-med .tier-badge { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.25); }
+  .tier-stealth .tier-badge { background: rgba(0,255,157,0.1); color: var(--accent3); border: 1px solid rgba(0,255,157,0.25); }
+
+  .attack-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .info-block {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 12px;
+  }
+
+  .info-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .info-val {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .tools-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tool-chip {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 2px;
+    background: rgba(0,212,255,0.06);
+    border: 1px solid rgba(0,212,255,0.15);
+    color: var(--accent);
+  }
+
+  .attack-card.tier-crit .tool-chip {
+    background: rgba(255,62,108,0.06);
+    border-color: rgba(255,62,108,0.15);
+    color: var(--accent2);
+  }
+
+  .attack-card.tier-high .tool-chip {
+    background: rgba(255,183,0,0.06);
+    border-color: rgba(255,183,0,0.15);
+    color: var(--accent4);
+  }
+
+  .attack-card.tier-stealth .tool-chip {
+    background: rgba(0,255,157,0.06);
+    border-color: rgba(0,255,157,0.15);
+    color: var(--accent3);
+  }
+
+  /* QUICK REFERENCE TABLE */
+  .table-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    position: relative;
+  }
+
+  .table-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent4));
+  }
+
+  .table-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(15,42,63,0.5);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover {
+    background: rgba(0,212,255,0.03);
+  }
+
+  tbody td {
+    padding: 12px 20px;
+    vertical-align: middle;
+  }
+
+  .td-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .td-req {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .td-goal {
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .risk-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  .risk-crit { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .risk-high { background: var(--accent4); box-shadow: 0 0 6px var(--accent4); }
+  .risk-med  { background: var(--accent);  box-shadow: 0 0 6px var(--accent); }
+  .risk-low  { background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    opacity: 0.5;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* SCAN LINE ANIMATION ON CARDS */
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  .card-scan {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent);
+    animation: scanline 4s linear infinite;
+    pointer-events: none;
+  }
+
+  /* SECTION DIVIDER */
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.3;
+  }
+
+  /* Entry animation */
+  .attack-card {
+    animation: fadeSlide 0.4s ease both;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .attack-card:nth-child(1)  { animation-delay: 0.05s; }
+  .attack-card:nth-child(2)  { animation-delay: 0.1s; }
+  .attack-card:nth-child(3)  { animation-delay: 0.15s; }
+  .attack-card:nth-child(4)  { animation-delay: 0.2s; }
+  .attack-card:nth-child(5)  { animation-delay: 0.25s; }
+  .attack-card:nth-child(6)  { animation-delay: 0.3s; }
+  .attack-card:nth-child(7)  { animation-delay: 0.35s; }
+  .attack-card:nth-child(8)  { animation-delay: 0.4s; }
+  .attack-card:nth-child(9)  { animation-delay: 0.45s; }
+  .attack-card:nth-child(10) { animation-delay: 0.5s; }
+  .attack-card:nth-child(11) { animation-delay: 0.55s; }
+  .attack-card:nth-child(12) { animation-delay: 0.6s; }
+  .attack-card:nth-child(13) { animation-delay: 0.65s; }
+
+  /* Blinking cursor */
+  .blink {
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-tag">// red team reference // active directory</div>
+    <h1>KERBEROS ATTACKS</h1>
+    <div class="header-sub">[ COMPLETE ATTACK TAXONOMY v1.0 ]<span class="blink">_</span></div>
+    <div class="header-line"></div>
+  </header>
+
+  <!-- KILL CHAIN -->
+  <div class="kill-chain">
+    <div class="section-label">// attack progression chain</div>
+    <div class="chain-flow">
+      <div class="chain-step">
+        <div class="chain-box">Domain User</div>
+        <div class="chain-arrow">→</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-box">AS-REP Roast<br>Kerberoast</div>
+        <div class="chain-arrow">→</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-box">Creds / Hashes</div>
+        <div class="chain-arrow">→</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-box">Silver Ticket<br>Delegation Abuse</div>
+        <div class="chain-arrow">→</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-box red">Local Admin</div>
+        <div class="chain-arrow">→</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-box red">DCSync<br>krbtgt Hash</div>
+        <div class="chain-arrow">→</div>
+      </div>
+      <div class="chain-step">
+        <div class="chain-box green">Golden Ticket<br>Domain Owned ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTACK CARDS -->
+  <div class="section-title">Attack Cards</div>
+  <div class="attacks-grid">
+
+    <!-- 1. Kerberoasting -->
+    <div class="attack-card tier-med">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">KERBEROASTING</div>
+        <div class="tier-badge">MEDIUM</div>
+      </div>
+      <div class="attack-desc">Request TGS tickets for accounts with SPNs. Tickets are encrypted with the service account's NTLM hash — crack offline.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Any valid domain user</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Service account plaintext password</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">GetUserSPNs.py</span>
+        <span class="tool-chip">Rubeus kerberoast</span>
+        <span class="tool-chip">Hashcat -m 13100</span>
+      </div>
+    </div>
+
+    <!-- 2. AS-REP Roasting -->
+    <div class="attack-card tier-med">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">AS-REP ROASTING</div>
+        <div class="tier-badge">MEDIUM</div>
+      </div>
+      <div class="attack-desc">Target accounts with pre-authentication disabled. AS-REP responses are encrypted with user's hash — no auth needed.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Preauth disabled on account</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">User plaintext password</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">GetNPUsers.py</span>
+        <span class="tool-chip">Rubeus asreproast</span>
+        <span class="tool-chip">Hashcat -m 18200</span>
+      </div>
+    </div>
+
+    <!-- 3. Golden Ticket -->
+    <div class="attack-card tier-crit">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">GOLDEN TICKET</div>
+        <div class="tier-badge">CRITICAL</div>
+      </div>
+      <div class="attack-desc">Forge a TGT using the krbtgt hash. Impersonate any user in the domain with any group membership. Survives password resets.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">krbtgt NTLM hash (DA)</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Persistent domain admin access</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">mimikatz</span>
+        <span class="tool-chip">impacket-ticketer</span>
+        <span class="tool-chip">Rubeus</span>
+      </div>
+    </div>
+
+    <!-- 4. Silver Ticket -->
+    <div class="attack-card tier-high">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">SILVER TICKET</div>
+        <div class="tier-badge">HIGH</div>
+      </div>
+      <div class="attack-desc">Forge a TGS for a specific service using the service account hash. No KDC contact — harder to detect. CIFS, HTTP, MSSQL, HOST.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Service account NTLM hash</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Access to specific service as any user</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">impacket-ticketer</span>
+        <span class="tool-chip">mimikatz</span>
+        <span class="tool-chip">klist</span>
+      </div>
+    </div>
+
+    <!-- 5. Diamond Ticket -->
+    <div class="attack-card tier-crit">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">DIAMOND TICKET</div>
+        <div class="tier-badge">CRITICAL</div>
+      </div>
+      <div class="attack-desc">Request a real TGT, decrypt & modify PAC (add groups), re-sign. Bypasses Golden Ticket detections because KDC signature is valid.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">krbtgt hash or AES key</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Stealthy domain-wide persistence</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">Rubeus diamond</span>
+      </div>
+    </div>
+
+    <!-- 6. Sapphire Ticket -->
+    <div class="attack-card tier-stealth">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">SAPPHIRE TICKET</div>
+        <div class="tier-badge">STEALTH</div>
+      </div>
+      <div class="attack-desc">Clone a real user's PAC from LDAP into a forged ticket. PAC matches actual AD data — evades anomaly-based detection.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">krbtgt hash + LDAP read access</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Most evasive forged ticket variant</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">Rubeus</span>
+      </div>
+    </div>
+
+    <!-- 7. Pass-the-Ticket -->
+    <div class="attack-card tier-high">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">PASS-THE-TICKET</div>
+        <div class="tier-badge">HIGH</div>
+      </div>
+      <div class="attack-desc">Inject a stolen or forged Kerberos ticket (.ccache / .kirbi) into the current session to authenticate as another user or service.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Valid .ccache or .kirbi ticket</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Lateral movement without plaintext creds</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">mimikatz</span>
+        <span class="tool-chip">KRB5CCNAME=ticket.ccache</span>
+        <span class="tool-chip">Rubeus ptt</span>
+      </div>
+    </div>
+
+    <!-- 8. Overpass-the-Hash -->
+    <div class="attack-card tier-high">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">OVERPASS-THE-HASH</div>
+        <div class="tier-badge">HIGH</div>
+      </div>
+      <div class="attack-desc">Use a user's NTLM hash or AES key to request a legitimate TGT from the KDC. Elevates NTLM hash to full Kerberos ticket.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">NTLM hash or AES key</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Full TGT → lateral movement</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">mimikatz sekurlsa::pth</span>
+        <span class="tool-chip">getTGT.py</span>
+        <span class="tool-chip">Rubeus asktgt</span>
+      </div>
+    </div>
+
+    <!-- 9. DCSync -->
+    <div class="attack-card tier-crit">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">DCSYNC</div>
+        <div class="tier-badge">CRITICAL</div>
+      </div>
+      <div class="attack-desc">Impersonate a domain controller using MS-DRSR to replicate credentials. Dumps all hashes including krbtgt without touching lsass.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Replicating Directory Changes + All</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">All domain hashes → full compromise</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">secretsdump.py</span>
+        <span class="tool-chip">mimikatz lsadump::dcsync</span>
+      </div>
+    </div>
+
+    <!-- 10. Unconstrained Delegation -->
+    <div class="attack-card tier-crit">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">UNCONSTRAINED DELEGATION</div>
+        <div class="tier-badge">CRITICAL</div>
+      </div>
+      <div class="attack-desc">Any user's TGT is stored in memory of a server with unconstrained delegation. Combine with Printer Bug to coerce DC authentication.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Compromise server with TrustedForDelegation</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Steal DC TGT → Domain Admin</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">Rubeus monitor</span>
+        <span class="tool-chip">SpoolSample</span>
+        <span class="tool-chip">mimikatz</span>
+      </div>
+    </div>
+
+    <!-- 11. Constrained Delegation -->
+    <div class="attack-card tier-high">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">CONSTRAINED DELEGATION</div>
+        <div class="tier-badge">HIGH</div>
+      </div>
+      <div class="attack-desc">Abuse S4U2Self + S4U2Proxy to impersonate any user (including DA) to allowed target services — no password needed.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Service account with delegation configured</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Admin impersonation on target services</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">getST.py -impersonate</span>
+        <span class="tool-chip">Rubeus s4u</span>
+      </div>
+    </div>
+
+    <!-- 12. RBCD -->
+    <div class="attack-card tier-crit">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">RBCD ABUSE</div>
+        <div class="tier-badge">CRITICAL</div>
+      </div>
+      <div class="attack-desc">Write msDS-AllowedToActOnBehalfOfOtherIdentity on a computer object. Create fake machine account, abuse S4U to impersonate DA.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Write on target computer object</div>
+        </div>
+        <div class="info-block">
+          <div class="info-val">Local admin on target as DA</div>
+          <div class="info-label">Result</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">PowerView</span>
+        <span class="tool-chip">addcomputer.py</span>
+        <span class="tool-chip">getST.py</span>
+      </div>
+    </div>
+
+    <!-- 13. Skeleton Key -->
+    <div class="attack-card tier-crit">
+      <div class="card-scan"></div>
+      <div class="card-header">
+        <div class="attack-name">SKELETON KEY</div>
+        <div class="tier-badge">CRITICAL</div>
+      </div>
+      <div class="attack-desc">Patch lsass on a DC to accept a master password for all accounts. Existing passwords still work — stealth backdoor.</div>
+      <div class="info-row">
+        <div class="info-block">
+          <div class="info-label">Requires</div>
+          <div class="info-val">Domain Admin + DC access</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Result</div>
+          <div class="info-val">Persistent in-memory backdoor</div>
+        </div>
+      </div>
+      <div class="tools-row">
+        <span class="tool-chip">mimikatz misc::skeleton</span>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- QUICK REF TABLE -->
+  <div class="section-title">Quick Reference Matrix</div>
+  <div class="table-section">
+    <table>
+      <thead>
+        <tr>
+          <th>Attack</th>
+          <th>Minimum Privilege</th>
+          <th>Goal / Impact</th>
+          <th>DC Contact</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-name">Kerberoasting</td>
+          <td class="td-req">Any domain user</td>
+          <td class="td-goal">Crack service account passwords</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-med"></span>Medium</td>
+        </tr>
+        <tr>
+          <td class="td-name">AS-REP Roasting</td>
+          <td class="td-req">None (pre-auth off)</td>
+          <td class="td-goal">Crack user passwords</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-med"></span>Medium</td>
+        </tr>
+        <tr>
+          <td class="td-name">Pass-the-Ticket</td>
+          <td class="td-req">Stolen .ccache ticket</td>
+          <td class="td-goal">Lateral movement</td>
+          <td class="td-req">Varies</td>
+          <td><span class="risk-dot risk-high"></span>High</td>
+        </tr>
+        <tr>
+          <td class="td-name">Golden Ticket</td>
+          <td class="td-req">krbtgt hash</td>
+          <td class="td-goal">Persistent DA access</td>
+          <td class="td-req">No</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+        <tr>
+          <td class="td-name">Silver Ticket</td>
+          <td class="td-req">Service NTLM hash</td>
+          <td class="td-goal">Stealthy service access</td>
+          <td class="td-req">No</td>
+          <td><span class="risk-dot risk-high"></span>High</td>
+        </tr>
+        <tr>
+          <td class="td-name">Diamond Ticket</td>
+          <td class="td-req">krbtgt hash</td>
+          <td class="td-goal">Golden ticket bypass detection</td>
+          <td class="td-req">Yes (real TGT)</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+        <tr>
+          <td class="td-name">Sapphire Ticket</td>
+          <td class="td-req">krbtgt hash + LDAP</td>
+          <td class="td-goal">Most evasive forged ticket</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+        <tr>
+          <td class="td-name">Overpass-the-Hash</td>
+          <td class="td-req">NTLM hash</td>
+          <td class="td-goal">Convert hash to TGT</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-high"></span>High</td>
+        </tr>
+        <tr>
+          <td class="td-name">DCSync</td>
+          <td class="td-req">Replication privileges</td>
+          <td class="td-goal">Dump all domain hashes</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+        <tr>
+          <td class="td-name">Unconstrained Deleg.</td>
+          <td class="td-req">Server w/ delegation</td>
+          <td class="td-goal">Steal TGTs from memory</td>
+          <td class="td-req">No</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+        <tr>
+          <td class="td-name">Constrained Deleg.</td>
+          <td class="td-req">Service w/ delegation</td>
+          <td class="td-goal">Impersonate DA on services</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-high"></span>High</td>
+        </tr>
+        <tr>
+          <td class="td-name">RBCD Abuse</td>
+          <td class="td-req">Write on computer object</td>
+          <td class="td-goal">Local admin → impersonate DA</td>
+          <td class="td-req">Yes</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+        <tr>
+          <td class="td-name">Skeleton Key</td>
+          <td class="td-req">Domain Admin</td>
+          <td class="td-goal">Master password backdoor</td>
+          <td class="td-req">On DC</td>
+          <td><span class="risk-dot risk-crit"></span>Critical</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="legend">
+      <div class="legend-item"><span class="risk-dot risk-crit"></span>CRITICAL — Domain-wide impact</div>
+      <div class="legend-item"><span class="risk-dot risk-high" style="background:var(--accent4)"></span>HIGH — Significant privilege gain</div>
+      <div class="legend-item"><span class="risk-dot risk-med"></span>MEDIUM — Credential exposure</div>
+      <div class="legend-item"><span class="risk-dot risk-low"></span>STEALTH — Evasion-focused</div>
+    </div>
+  </div>
+
+  <footer>
+    FOR AUTHORIZED SECURITY ASSESSMENT USE ONLY &nbsp;|&nbsp; KERBEROS ATTACKS CHEAT SHEET &nbsp;|&nbsp; RED TEAM REFERENCE
+  </footer>
+
+</div>
+</body>
+</html>
