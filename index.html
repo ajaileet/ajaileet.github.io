@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AJAI 1337</title>
+<title>4JAI NOTES</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Orbitron:wght@400;700;900&display=swap');
 
@@ -107,58 +107,65 @@
   /* Title */
   #title {
     font-family: 'Orbitron', monospace;
-    font-size: clamp(48px, 10vw, 120px);
+    font-size: clamp(32px, 6.5vw, 80px);
     font-weight: 900;
     letter-spacing: 0.15em;
-    color: var(--green);
-    text-shadow: var(--glow);
-    animation: flicker 6s infinite;
-    position: relative;
     text-align: center;
     line-height: 1;
+    position: relative;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"),
+      linear-gradient(135deg, #00ff41 0%, #00cc33 40%, #00ff88 70%, #00e040 100%);
+    background-blend-mode: overlay, normal;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 8px rgba(0,255,65,0.6)) drop-shadow(0 0 20px rgba(0,255,65,0.3));
+    animation: subtle-glitch 5s infinite;
   }
 
   #title::before {
-    content: 'AJAI 1337';
+    content: '4JAI NOTES';
     position: absolute;
     top: 0; left: 0; right: 0;
-    color: #ff0040;
-    text-shadow: none;
-    clip-path: inset(30% 0 40% 0);
-    animation: glitch1 3s infinite;
-    opacity: 0.7;
+    background-image: none;
+    -webkit-text-fill-color: #ff003c;
+    opacity: 0;
+    animation: glitch-red 5s infinite;
   }
 
   #title::after {
-    content: 'AJAI 1337';
+    content: '4JAI NOTES';
     position: absolute;
     top: 0; left: 0; right: 0;
-    color: #00ffff;
-    text-shadow: none;
-    clip-path: inset(60% 0 10% 0);
-    animation: glitch2 2.5s infinite;
-    opacity: 0.5;
+    background-image: none;
+    -webkit-text-fill-color: #00ffff;
+    opacity: 0;
+    animation: glitch-cyan 5s infinite;
   }
 
-  @keyframes glitch1 {
-    0%, 90%, 100% { transform: translateX(0); clip-path: inset(30% 0 40% 0); }
-    92% { transform: translateX(-4px); clip-path: inset(10% 0 60% 0); }
-    94% { transform: translateX(4px); clip-path: inset(45% 0 20% 0); }
-    96% { transform: translateX(-2px); clip-path: inset(70% 0 5% 0); }
+  @keyframes subtle-glitch {
+    0%, 88%, 100% { transform: translateX(0); }
+    89%  { transform: translateX(-3px); }
+    90%  { transform: translateX(3px); }
+    91%  { transform: translateX(-1px); }
+    92%  { transform: translateX(0); }
   }
 
-  @keyframes glitch2 {
-    0%, 85%, 100% { transform: translateX(0); clip-path: inset(60% 0 10% 0); }
-    87% { transform: translateX(5px); clip-path: inset(20% 0 50% 0); }
-    89% { transform: translateX(-3px); clip-path: inset(55% 0 15% 0); }
+  @keyframes glitch-red {
+    0%, 88%, 93%, 100% { opacity: 0; transform: translateX(0); clip-path: inset(0 0 100% 0); }
+    89% { opacity: 0.6; transform: translateX(-3px); clip-path: inset(20% 0 50% 0); }
+    90% { opacity: 0.5; transform: translateX(2px); clip-path: inset(55% 0 10% 0); }
+    91% { opacity: 0.4; transform: translateX(-1px); clip-path: inset(35% 0 30% 0); }
+    92% { opacity: 0; }
   }
 
-  @keyframes flicker {
-    0%, 95%, 100% { opacity: 1; }
-    96% { opacity: 0.85; }
-    97% { opacity: 1; }
-    98% { opacity: 0.6; }
-    99% { opacity: 1; }
+  @keyframes glitch-cyan {
+    0%, 88%, 93%, 100% { opacity: 0; transform: translateX(0); clip-path: inset(0 0 100% 0); }
+    89% { opacity: 0.5; transform: translateX(3px); clip-path: inset(50% 0 15% 0); }
+    90% { opacity: 0.4; transform: translateX(-2px); clip-path: inset(10% 0 60% 0); }
+    91% { opacity: 0.3; transform: translateX(1px); clip-path: inset(70% 0 5% 0); }
+    92% { opacity: 0; }
   }
 
   /* Subtitle */
@@ -408,14 +415,15 @@
 </div>
 
 <div id="main">
-  <div id="title">AJAI 1337</div>
-  <div id="subtitle">// Penetration Tester &amp; Red Team Operator //</div>
+  <div id="title">4JAI NOTES</div>
+  <div id="subtitle">// Born To Be 1337 //</div>
   <div class="sep"></div>
   <div id="nav-dirs">
     <a class="nav-btn" href="crtp/" data-path="/crtp"><span class="dir-prefix">~/</span>crtp</a>
     <a class="nav-btn" href="kerberos/" data-path="/kerberos"><span class="dir-prefix">~/</span>kerberos</a>
     <a class="nav-btn" href="mimikatz/" data-path="/mimikatz"><span class="dir-prefix">~/</span>mimikatz</a>
     <a class="nav-btn" href="meterpreter/" data-path="/meterpreter"><span class="dir-prefix">~/</span>meterpreter</a>
+    <a class="nav-btn" href="smb/" data-path="/smb"><span class="dir-prefix">~/</span>smb</a>
   </div>
 
   <div id="terminal">
@@ -677,7 +685,7 @@ document.addEventListener('keydown', e => {
     konamiIdx++;
     if (konamiIdx === konami.length) {
       printLine('[!!!] CHEAT CODE ACTIVATED: GOD MODE ENABLED', 'term-line success');
-      document.getElementById('title').style.animation = 'flicker 0.3s infinite, glitch1 0.5s infinite';
+      document.getElementById('title').style.filter = 'drop-shadow(0 0 20px #00ff41) drop-shadow(0 0 40px #00ff41) drop-shadow(0 0 60px #00ff41)';
       konamiIdx = 0;
     }
   } else { konamiIdx = 0; }
