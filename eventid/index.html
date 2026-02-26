@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows Event ID — SOC Cheat Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --bg2: #080f17;
+    --panel: #0a1520;
+    --border: #0e2a3a;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --accent4: #ffd700;
+    --accent5: #c84bff;
+    --accent6: #ff3860;
+    --text: #c8d8e8;
+    --muted: #4a6278;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Orbitron', sans-serif;
+    --body: 'Rajdhani', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Grid background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px 60px; }
+
+  /* HEADER */
+  header {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .logo-area {}
+  .sys-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(22px, 4vw, 42px);
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,212,255,0.4);
+    letter-spacing: 2px;
+    line-height: 1.1;
+  }
+  h1 span { color: var(--text); }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+  .status-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .status-item {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .status-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 6px var(--accent2);
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* SEARCH */
+  .search-wrap {
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 14px;
+  }
+  #search {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px 16px 12px 44px;
+    outline: none;
+    letter-spacing: 1px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #search:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(0,212,255,0.15);
+  }
+  #search::placeholder { color: var(--muted); }
+
+  /* FILTER TABS */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tab:hover { color: var(--accent); border-color: var(--accent); }
+  .tab.active {
+    color: var(--bg);
+    border-color: transparent;
+    font-weight: 700;
+  }
+
+  /* GRID */
+  .categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 24px;
+  }
+
+  /* CATEGORY CARD */
+  .cat-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .cat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+  .cat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .cat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0,0,0,0.2);
+  }
+  .cat-icon {
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.3);
+    flex-shrink: 0;
+  }
+  .cat-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .cat-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* EVENTS TABLE */
+  .events-list { padding: 8px 0; }
+  .event-row {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 12px;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(14,42,58,0.6);
+    align-items: start;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .event-row:last-child { border-bottom: none; }
+  .event-row:hover { background: rgba(0,212,255,0.04); }
+  .event-row.hidden { display: none; }
+
+  .event-id {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .event-info {}
+  .event-name {
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 3px;
+  }
+  .event-desc {
+    font-family: var(--body);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .severity {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+  .sev-critical { background: rgba(255,56,96,0.15); color: var(--accent6); border: 1px solid rgba(255,56,96,0.3); }
+  .sev-high     { background: rgba(255,107,53,0.15); color: var(--accent3); border: 1px solid rgba(255,107,53,0.3); }
+  .sev-medium   { background: rgba(255,215,0,0.1); color: var(--accent4); border: 1px solid rgba(255,215,0,0.3); }
+  .sev-low      { background: rgba(0,255,157,0.08); color: var(--accent2); border: 1px solid rgba(0,255,157,0.2); }
+  .sev-info     { background: rgba(0,212,255,0.08); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+
+  /* Category color themes */
+  .theme-auth::before { background: var(--accent2); }
+  .theme-auth .cat-title { color: var(--accent2); }
+  .theme-auth .cat-icon { color: var(--accent2); }
+  .theme-auth .event-id { color: var(--accent2); }
+
+  .theme-priv::before { background: var(--accent6); }
+  .theme-priv .cat-title { color: var(--accent6); }
+  .theme-priv .cat-icon { color: var(--accent6); }
+  .theme-priv .event-id { color: var(--accent6); }
+
+  .theme-process::before { background: var(--accent3); }
+  .theme-process .cat-title { color: var(--accent3); }
+  .theme-process .cat-icon { color: var(--accent3); }
+  .theme-process .event-id { color: var(--accent3); }
+
+  .theme-network::before { background: var(--accent); }
+  .theme-network .cat-title { color: var(--accent); }
+  .theme-network .cat-icon { color: var(--accent); }
+  .theme-network .event-id { color: var(--accent); }
+
+  .theme-object::before { background: var(--accent4); }
+  .theme-object .cat-title { color: var(--accent4); }
+  .theme-object .cat-icon { color: var(--accent4); }
+  .theme-object .event-id { color: var(--accent4); }
+
+  .theme-system::before { background: var(--accent5); }
+  .theme-system .cat-title { color: var(--accent5); }
+  .theme-system .cat-icon { color: var(--accent5); }
+  .theme-system .event-id { color: var(--accent5); }
+
+  .theme-ad::before { background: #ff9f43; }
+  .theme-ad .cat-title { color: #ff9f43; }
+  .theme-ad .cat-icon { color: #ff9f43; }
+  .theme-ad .event-id { color: #ff9f43; }
+
+  .theme-sysmon::before { background: #a29bfe; }
+  .theme-sysmon .cat-title { color: #a29bfe; }
+  .theme-sysmon .cat-icon { color: #a29bfe; }
+  .theme-sysmon .event-id { color: #a29bfe; }
+
+  /* No results */
+  #no-results {
+    display: none;
+    text-align: center;
+    padding: 60px;
+    font-family: var(--mono);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Log channel badge */
+  .log-channel {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 700px) {
+    .categories-grid { grid-template-columns: 1fr; }
+    .event-row { grid-template-columns: 70px 1fr; }
+    .severity { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-top">
+      <div class="logo-area">
+        <div class="sys-tag">// SOC Reference · Windows Security</div>
+        <h1>EVENT ID <span>CHEAT SHEET</span></h1>
+        <div class="subtitle">WINDOWS SECURITY LOG · SIEM DETECTION REFERENCE · v2025</div>
+      </div>
+      <div class="status-bar">
+        <div class="status-item"><span class="dot"></span> MONITORING ACTIVE</div>
+        <div class="status-item">CATEGORIES: 8</div>
+        <div class="status-item">TOTAL EVENTS: 70+</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search event ID, name, or description..." autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-filter="all" style="border-color:#00d4ff;color:#00d4ff;">ALL</button>
+    <button class="tab" data-filter="auth">Authentication</button>
+    <button class="tab" data-filter="priv">Privilege & Account</button>
+    <button class="tab" data-filter="process">Process Execution</button>
+    <button class="tab" data-filter="network">Network & Firewall</button>
+    <button class="tab" data-filter="object">Object Access</button>
+    <button class="tab" data-filter="system">System & Services</button>
+    <button class="tab" data-filter="ad">Active Directory</button>
+    <button class="tab" data-filter="sysmon">Sysmon (Event 1-25)</button>
+  </div>
+
+  <div class="categories-grid" id="grid"></div>
+  <div id="no-results">[ NO MATCHING EVENTS FOUND ]</div>
+
+  <footer>
+    <span>4JAI NOTES · WINDOWS EVENT ID REFERENCE</span>
+    <span>LOG SOURCES: Security · System · Sysmon · Application</span>
+  </footer>
+</div>
+
+<script>
+const categories = [
+  {
+    id: 'auth',
+    theme: 'theme-auth',
+    icon: '🔐',
+    title: 'Authentication & Logon',
+    channel: 'Security Log',
+    events: [
+      { id: '4624', name: 'Successful Logon', desc: 'Account successfully logged on. Check logon type (Type 3=Network, Type 10=RemoteInteractive, Type 2=Interactive).', sev: 'info' },
+      { id: '4625', name: 'Failed Logon', desc: 'Account failed to log on. Brute force indicator — watch for multiple failures. Check SubStatus for reason.', sev: 'high' },
+      { id: '4634', name: 'Logoff', desc: 'Account logged off. Use with 4624 to track session duration.', sev: 'info' },
+      { id: '4647', name: 'User Initiated Logoff', desc: 'User-initiated logoff event. Paired with 4634 for interactive sessions.', sev: 'info' },
+      { id: '4648', name: 'Explicit Credential Logon', desc: 'Logon using explicit credentials (e.g., RunAs). Common in pass-the-hash and lateral movement.', sev: 'high' },
+      { id: '4649', name: 'Replay Attack Detected', desc: 'A replay attack was detected. Kerberos replay protection triggered.', sev: 'critical' },
+      { id: '4768', name: 'Kerberos TGT Requested', desc: 'Kerberos AS-REQ — TGT requested. AS-REP Roasting: watch for RC4 encryption type (0x17).', sev: 'medium' },
+      { id: '4769', name: 'Kerberos Service Ticket Requested', desc: 'TGS-REQ — service ticket requested. Kerberoasting: look for RC4 (0x17) encryption type for service accounts.', sev: 'medium' },
+      { id: '4771', name: 'Kerberos Pre-Auth Failed', desc: 'Kerberos pre-authentication failed. Wrong password or disabled account. AS-REP Roasting leaves no 4771 (pre-auth disabled).', sev: 'high' },
+      { id: '4776', name: 'NTLM Credential Validation', desc: 'Domain controller attempted to validate NTLM credentials. Watch for credential stuffing against DC.', sev: 'medium' },
+      { id: '4778', name: 'Session Reconnected', desc: 'RDP/Terminal Services session reconnected. Track remote access patterns.', sev: 'low' },
+      { id: '4779', name: 'Session Disconnected', desc: 'RDP/Terminal Services session disconnected.', sev: 'info' },
+      { id: '4800', name: 'Workstation Locked', desc: 'Workstation was locked.', sev: 'info' },
+      { id: '4801', name: 'Workstation Unlocked', desc: 'Workstation was unlocked.', sev: 'info' },
+    ]
+  },
+  {
+    id: 'priv',
+    theme: 'theme-priv',
+    icon: '👑',
+    title: 'Privilege & Account Management',
+    channel: 'Security Log',
+    events: [
+      { id: '4672', name: 'Special Privileges Assigned', desc: 'Special privileges (SeDebugPrivilege, SeTcbPrivilege, etc.) assigned at logon. Admin/SYSTEM logon indicator.', sev: 'high' },
+      { id: '4673', name: 'Privileged Service Called', desc: 'A privileged service was called. Tracks use of sensitive privileges.', sev: 'medium' },
+      { id: '4674', name: 'Privilege Use Attempt', desc: 'An operation attempted on a privileged object. Tracks who used sensitive privileges.', sev: 'medium' },
+      { id: '4688', name: 'Process Creation', desc: 'New process created. Essential for process lineage tracking. Enable with Process Tracking audit policy.', sev: 'medium' },
+      { id: '4720', name: 'User Account Created', desc: 'New user account created. Watch for unauthorized account creation.', sev: 'high' },
+      { id: '4722', name: 'User Account Enabled', desc: 'A user account was enabled. Previously disabled account re-enabled.', sev: 'medium' },
+      { id: '4723', name: 'Password Change Attempt', desc: 'Account attempted to change its own password.', sev: 'low' },
+      { id: '4724', name: 'Admin Password Reset', desc: 'Admin attempted to reset an account password. Watch for unauthorized resets.', sev: 'high' },
+      { id: '4725', name: 'User Account Disabled', desc: 'User account was disabled. May indicate lockout or admin action.', sev: 'medium' },
+      { id: '4726', name: 'User Account Deleted', desc: 'A user account was deleted. Could indicate cleanup after compromise.', sev: 'high' },
+      { id: '4728', name: 'Member Added to Global Group', desc: 'Member added to a security-enabled global group (e.g., Domain Admins). Critical for privileged group changes.', sev: 'critical' },
+      { id: '4732', name: 'Member Added to Local Group', desc: 'Member added to a local security group (e.g., Administrators). Privilege escalation indicator.', sev: 'high' },
+      { id: '4740', name: 'Account Locked Out', desc: 'User account locked out. Mass lockouts may indicate brute force or credential spraying.', sev: 'high' },
+      { id: '4756', name: 'Member Added to Universal Group', desc: 'Member added to a security-enabled universal group.', sev: 'high' },
+      { id: '4767', name: 'Account Unlocked', desc: 'A user account was unlocked.', sev: 'medium' },
+    ]
+  },
+  {
+    id: 'process',
+    theme: 'theme-process',
+    icon: '⚙️',
+    title: 'Process Execution',
+    channel: 'Security / Sysmon',
+    events: [
+      { id: '4688', name: 'Process Created (Native)', desc: 'New process spawned. Check ParentProcessName + CommandLine. Enable command line logging via GPO.', sev: 'medium' },
+      { id: '4689', name: 'Process Terminated', desc: 'Process exited. Pair with 4688 for execution duration analysis.', sev: 'info' },
+      { id: '4698', name: 'Scheduled Task Created', desc: 'A scheduled task was created. Common persistence mechanism — watch non-standard task names.', sev: 'high' },
+      { id: '4699', name: 'Scheduled Task Deleted', desc: 'Scheduled task deleted. May indicate cleanup of malicious persistence.', sev: 'medium' },
+      { id: '4700', name: 'Scheduled Task Enabled', desc: 'A previously disabled scheduled task was enabled.', sev: 'medium' },
+      { id: '4701', name: 'Scheduled Task Disabled', desc: 'A scheduled task was disabled.', sev: 'low' },
+      { id: '4702', name: 'Scheduled Task Updated', desc: 'Scheduled task was modified. Detect task hijacking.', sev: 'high' },
+      { id: '7045', name: 'Service Installed', desc: '(System Log) New service installed. Common malware persistence — watch for random service names.', sev: 'high' },
+      { id: '7040', name: 'Service Start Type Changed', desc: '(System Log) Service start type changed. May indicate persistence modification.', sev: 'medium' },
+    ]
+  },
+  {
+    id: 'network',
+    theme: 'theme-network',
+    icon: '🌐',
+    title: 'Network & Firewall',
+    channel: 'Security / Windows Firewall',
+    events: [
+      { id: '5140', name: 'Network Share Accessed', desc: 'Network share object accessed. Lateral movement indicator — watch admin shares (C$, IPC$, ADMIN$).', sev: 'high' },
+      { id: '5142', name: 'Network Share Added', desc: 'Network share added. Unauthorized shares may exfiltrate data.', sev: 'high' },
+      { id: '5143', name: 'Network Share Changed', desc: 'Network share modified. Check permission changes.', sev: 'medium' },
+      { id: '5144', name: 'Network Share Deleted', desc: 'Network share deleted.', sev: 'medium' },
+      { id: '5145', name: 'Network Share File Access', desc: 'Detailed file access in network share. High-volume events; filter for sensitive paths.', sev: 'medium' },
+      { id: '5156', name: 'Network Connection Allowed (WFP)', desc: 'Windows Filtering Platform allowed a connection. Baseline then hunt anomalies.', sev: 'info' },
+      { id: '5157', name: 'Network Connection Blocked (WFP)', desc: 'WFP blocked a connection. Blocked lateral movement or C2 attempts.', sev: 'medium' },
+      { id: '5158', name: 'Bind to Local Port', desc: 'Application bound to a local port. Detect rogue listeners.', sev: 'low' },
+      { id: '5152', name: 'WFP Packet Blocked', desc: 'A packet was blocked by WFP.', sev: 'medium' },
+      { id: '4946', name: 'Firewall Rule Added', desc: 'New firewall rule added. Attackers add rules to allow C2 traffic.', sev: 'high' },
+      { id: '4947', name: 'Firewall Rule Changed', desc: 'Existing firewall rule modified. Watch for weakening rules.', sev: 'high' },
+      { id: '4948', name: 'Firewall Rule Deleted', desc: 'Firewall rule deleted. Blocking rules removed = allow traffic.', sev: 'high' },
+    ]
+  },
+  {
+    id: 'object',
+    theme: 'theme-object',
+    icon: '📁',
+    title: 'Object & File Access',
+    channel: 'Security Log',
+    events: [
+      { id: '4656', name: 'Object Handle Requested', desc: 'Request for a handle to an object (file, registry, process). Pre-access event.', sev: 'low' },
+      { id: '4657', name: 'Registry Value Modified', desc: 'Registry value was modified. Persistence, config tampering — watch Run keys, Services.', sev: 'high' },
+      { id: '4660', name: 'Object Deleted', desc: 'Object (file/folder/registry key) deleted. Evidence deletion indicator.', sev: 'medium' },
+      { id: '4663', name: 'Object Access Attempt', desc: 'Attempt to access an object. Enable Object Access audit + SACL on target objects.', sev: 'medium' },
+      { id: '4670', name: 'Object Permissions Changed', desc: 'Permissions on an object changed. Watch for DACL weakening.', sev: 'high' },
+      { id: '4698', name: 'Scheduled Task Created', desc: 'See Process Execution category. Also logged as object creation.', sev: 'high' },
+      { id: '4906', name: 'CrashOnAuditFail Changed', desc: 'Audit policy CrashOnAuditFail changed. Potential audit evasion.', sev: 'critical' },
+      { id: '4907', name: 'Auditing Settings Changed', desc: 'Auditing settings on object changed. Could disable logging on sensitive object.', sev: 'high' },
+    ]
+  },
+  {
+    id: 'system',
+    theme: 'theme-system',
+    icon: '🖥️',
+    title: 'System & Policy Changes',
+    channel: 'Security / System Log',
+    events: [
+      { id: '1102', name: 'Audit Log Cleared', desc: '⚠️ Security event log cleared! High-priority alert — attacker covering tracks. Immediately escalate.', sev: 'critical' },
+      { id: '4616', name: 'System Time Changed', desc: 'System clock changed. Log tampering or timestomping.', sev: 'high' },
+      { id: '4719', name: 'Audit Policy Changed', desc: 'System audit policy changed. Could disable security logging — critical alert.', sev: 'critical' },
+      { id: '4817', name: 'Auditing Settings Changed (Object)', desc: 'Auditing settings on an object changed.', sev: 'high' },
+      { id: '4902', name: 'Per-User Audit Policy Table Created', desc: 'Per-user audit policy created.', sev: 'medium' },
+      { id: '4904', name: 'Security Event Source Registered', desc: 'A security event source attempted to register. New log provider — may indicate tool installation.', sev: 'medium' },
+      { id: '4905', name: 'Security Event Source Unregistered', desc: 'A security event source unregistered. Logging component removed.', sev: 'medium' },
+      { id: '6005', name: 'Event Log Service Started', desc: '(System Log) Indicates system startup or log service restart.', sev: 'info' },
+      { id: '6006', name: 'Event Log Service Stopped', desc: '(System Log) Log service stopped — unplanned stop is suspicious.', sev: 'high' },
+      { id: '6008', name: 'Unexpected System Shutdown', desc: '(System Log) Previous shutdown was unexpected. Could indicate BSOD, hard reset, or attack.', sev: 'medium' },
+      { id: '4689', name: 'Process Exit', desc: 'A process exited. Use to close the process lifecycle from 4688.', sev: 'info' },
+    ]
+  },
+  {
+    id: 'ad',
+    theme: 'theme-ad',
+    icon: '🏢',
+    title: 'Active Directory',
+    channel: 'Security Log (DC)',
+    events: [
+      { id: '4662', name: 'AD Object Operation', desc: 'Operation performed on an AD object. DCSync detection: look for DS-Replication-Get-Changes-All right on domain object.', sev: 'critical' },
+      { id: '4742', name: 'Computer Account Changed', desc: 'Computer account modified. Resource-based constrained delegation abuse: watch for msDS-AllowedToActOnBehalfOfOtherIdentity changes.', sev: 'high' },
+      { id: '4743', name: 'Computer Account Deleted', desc: 'Computer account deleted.', sev: 'medium' },
+      { id: '4741', name: 'Computer Account Created', desc: 'New computer account created. MachineAccountQuota abuse — non-admin creating machine accounts.', sev: 'high' },
+      { id: '4728', name: 'Added to Domain Global Group', desc: 'User added to global group (Domain Admins, Enterprise Admins). Privilege escalation.', sev: 'critical' },
+      { id: '4729', name: 'Removed from Global Group', desc: 'User removed from security-enabled global group.', sev: 'medium' },
+      { id: '5136', name: 'AD Object Modified', desc: 'Directory service object was modified. Watch AdminSDHolder, GPO links, and delegation changes.', sev: 'high' },
+      { id: '5137', name: 'AD Object Created', desc: 'Directory service object was created.', sev: 'medium' },
+      { id: '5141', name: 'AD Object Deleted', desc: 'Directory service object was deleted.', sev: 'medium' },
+      { id: '4713', name: 'Kerberos Policy Changed', desc: 'Kerberos policy changed on domain. Golden Ticket setup — watch for ticket lifetime changes.', sev: 'critical' },
+      { id: '4706', name: 'New Domain Trust Created', desc: 'New trust created to a domain. Cross-forest lateral movement vector.', sev: 'critical' },
+      { id: '4707', name: 'Domain Trust Removed', desc: 'Trust with a domain removed.', sev: 'high' },
+    ]
+  },
+  {
+    id: 'sysmon',
+    theme: 'theme-sysmon',
+    icon: '🔬',
+    title: 'Sysmon Events',
+    channel: 'Microsoft-Windows-Sysmon/Operational',
+    events: [
+      { id: 'EID 1', name: 'Process Create', desc: 'Process created with full command line, hashes, parent process. Best event for process hunting.', sev: 'medium' },
+      { id: 'EID 2', name: 'File Creation Time Changed', desc: 'File creation timestamp altered. Timestomping detection.', sev: 'high' },
+      { id: 'EID 3', name: 'Network Connection', desc: 'Process made outbound network connection. C2 beacon detection — correlate with process name.', sev: 'high' },
+      { id: 'EID 5', name: 'Process Terminated', desc: 'Process terminated. Pair with EID 1 for process lifecycle.', sev: 'info' },
+      { id: 'EID 6', name: 'Driver Loaded', desc: 'Kernel driver loaded. Rootkit/BYOVD detection — check signatures.', sev: 'critical' },
+      { id: 'EID 7', name: 'Image (DLL) Loaded', desc: 'DLL loaded into process. DLL injection/hijacking detection.', sev: 'medium' },
+      { id: 'EID 8', name: 'CreateRemoteThread', desc: 'Remote thread created in another process. Classic code injection technique.', sev: 'critical' },
+      { id: 'EID 10', name: 'ProcessAccess', desc: 'Process opened another process. LSASS access = credential dumping (Mimikatz, etc.).', sev: 'critical' },
+      { id: 'EID 11', name: 'File Created', desc: 'File created or overwritten. Dropper/malware download detection.', sev: 'medium' },
+      { id: 'EID 12', name: 'Registry Object Created/Deleted', desc: 'Registry key/value created or deleted. Persistence detection.', sev: 'medium' },
+      { id: 'EID 13', name: 'Registry Value Set', desc: 'Registry value modified. Persistence mechanism (Run keys, Services).', sev: 'high' },
+      { id: 'EID 15', name: 'File Stream Created', desc: 'Alternate Data Stream (ADS) created. File hiding technique.', sev: 'high' },
+      { id: 'EID 17', name: 'Pipe Created', desc: 'Named pipe created. Many C2 frameworks (Cobalt Strike) use named pipes.', sev: 'high' },
+      { id: 'EID 18', name: 'Pipe Connected', desc: 'Named pipe connection. Lateral movement via PsExec/SMB.', sev: 'high' },
+      { id: 'EID 22', name: 'DNS Query', desc: 'DNS query logged with process info. DNS tunneling / C2 domain detection.', sev: 'medium' },
+      { id: 'EID 23', name: 'File Delete Archived', desc: 'File deleted and archived. Evidence deletion tracking.', sev: 'medium' },
+      { id: 'EID 25', name: 'Process Tampering', desc: 'Process image tampered (herpaderping, hollowing). Advanced evasion detection.', sev: 'critical' },
+    ]
+  }
+];
+
+// Tab color map
+const tabColors = {
+  auth: '#00ff9d',
+  priv: '#ff3860',
+  process: '#ff6b35',
+  network: '#00d4ff',
+  object: '#ffd700',
+  system: '#c84bff',
+  ad: '#ff9f43',
+  sysmon: '#a29bfe',
+};
+
+// Build tabs color
+document.querySelectorAll('.tab[data-filter]').forEach(tab => {
+  const f = tab.dataset.filter;
+  if (tabColors[f]) {
+    tab.addEventListener('mouseenter', () => {
+      if (!tab.classList.contains('active')) {
+        tab.style.color = tabColors[f];
+        tab.style.borderColor = tabColors[f];
+      }
+    });
+    tab.addEventListener('mouseleave', () => {
+      if (!tab.classList.contains('active')) {
+        tab.style.color = '';
+        tab.style.borderColor = '';
+      }
+    });
+  }
+});
+
+// Build grid
+const grid = document.getElementById('grid');
+
+function buildGrid() {
+  grid.innerHTML = '';
+  categories.forEach(cat => {
+    const card = document.createElement('div');
+    card.className = `cat-card ${cat.theme}`;
+    card.dataset.category = cat.id;
+
+    const header = `
+      <div class="cat-header">
+        <div class="cat-icon">${cat.icon}</div>
+        <div>
+          <div class="cat-title">${cat.title}</div>
+          <div class="log-channel">${cat.channel}</div>
+        </div>
+        <div class="cat-count">${cat.events.length} events</div>
+      </div>`;
+
+    const rows = cat.events.map(ev => `
+      <div class="event-row" data-name="${ev.name.toLowerCase()}" data-id="${ev.id.toLowerCase()}" data-desc="${ev.desc.toLowerCase()}" data-cat="${cat.id}">
+        <div class="event-id">${ev.id}</div>
+        <div class="event-info">
+          <div class="event-name">${ev.name}</div>
+          <div class="event-desc">${ev.desc}</div>
+        </div>
+        <span class="severity sev-${ev.sev}">${ev.sev}</span>
+      </div>`).join('');
+
+    card.innerHTML = header + `<div class="events-list">${rows}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+buildGrid();
+
+// Filter
+let activeFilter = 'all';
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.remove('active');
+      t.style.background = '';
+      t.style.color = '';
+      t.style.borderColor = '';
+    });
+    tab.classList.add('active');
+    const f = tab.dataset.filter;
+    const color = f === 'all' ? '#00d4ff' : (tabColors[f] || '#00d4ff');
+    tab.style.background = color;
+    tab.style.color = '#050a0f';
+    tab.style.borderColor = color;
+    activeFilter = f;
+    applyFilters();
+  });
+});
+
+// Set initial tab style
+document.querySelector('.tab.active').style.background = '#00d4ff';
+document.querySelector('.tab.active').style.color = '#050a0f';
+document.querySelector('.tab.active').style.borderColor = '#00d4ff';
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let totalVisible = 0;
+
+  document.querySelectorAll('.cat-card').forEach(card => {
+    const cat = card.dataset.category;
+    const catMatch = activeFilter === 'all' || activeFilter === cat;
+
+    if (!catMatch) {
+      card.style.display = 'none';
+      return;
+    }
+
+    card.style.display = '';
+    let cardVisible = 0;
+
+    card.querySelectorAll('.event-row').forEach(row => {
+      const matches = !q ||
+        row.dataset.id.includes(q) ||
+        row.dataset.name.includes(q) ||
+        row.dataset.desc.includes(q);
+      row.style.display = matches ? '' : 'none';
+      if (matches) cardVisible++;
+    });
+
+    card.style.display = cardVisible === 0 && q ? 'none' : '';
+    totalVisible += cardVisible;
+  });
+
+  document.getElementById('no-results').style.display = totalVisible === 0 ? 'block' : 'none';
+  // Update count badge on cat headers
+  document.querySelectorAll('.cat-card').forEach(card => {
+    const visible = card.querySelectorAll('.event-row:not([style*="display: none"])').length;
+    const cnt = card.querySelector('.cat-count');
+    if (cnt) {
+      const total = card.querySelectorAll('.event-row').length;
+      cnt.textContent = q ? `${visible}/${total}` : `${total} events`;
+    }
+  });
+}
+
+document.getElementById('search').addEventListener('input', applyFilters);
+</script>
+</body>
+</html>
