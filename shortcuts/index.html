@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal Shortcut Cheat Sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #0f1318;
+    --border: #1e2530;
+    --accent: #00ff9d;
+    --accent2: #00cfff;
+    --text: #c8d6e0;
+    --dim: #4a5568;
+    --key-bg: #141920;
+    --key-border: #2a3545;
+    --key-shadow: #060810;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    min-height: 100vh;
+    padding: 24px 16px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none; z-index: 999;
+  }
+
+  header { text-align: center; margin-bottom: 28px; }
+
+  header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,255,157,0.5), 0 0 40px rgba(0,255,157,0.2);
+    margin-bottom: 8px;
+  }
+
+  header p {
+    color: var(--dim);
+    font-size: 0.95rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 16px auto;
+    max-width: 500px;
+    opacity: 0.4;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.92rem;
+    letter-spacing: 0.1em;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .tab-btn:hover, .tab-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,255,157,0.2);
+    background: rgba(0,255,157,0.05);
+  }
+
+  .shortcuts-panel { max-width: 980px; margin: 0 auto 28px; }
+
+  .category { display: none; }
+  .category.active { display: block; }
+
+  .category-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .shortcut-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.92rem;
+    padding: 13px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shortcut-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .shortcut-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,255,157,0.06); box-shadow: 0 0 12px rgba(0,255,157,0.15); }
+  .shortcut-btn:hover::before { opacity: 1; }
+  .shortcut-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,255,157,0.1); box-shadow: 0 0 16px rgba(0,255,157,0.25); }
+  .shortcut-btn.active::before { opacity: 1; }
+
+  .btn-keys {
+    font-size: 0.95rem;
+    color: var(--accent2);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .shortcut-btn.active .btn-keys { color: var(--accent); }
+
+  .btn-desc {
+    color: var(--dim);
+    font-size: 0.82rem;
+    line-height: 1.3;
+    flex: 1;
+  }
+
+  .shortcut-btn:hover .btn-desc,
+  .shortcut-btn.active .btn-desc { color: var(--text); }
+
+  .tooltip {
+    background: rgba(0,255,157,0.08);
+    border: 1px solid rgba(0,255,157,0.3);
+    color: var(--accent);
+    font-size: 0.95rem;
+    padding: 11px 18px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    max-width: 980px;
+    margin-left: auto;
+    margin-right: auto;
+    transition: all 0.2s;
+  }
+
+  .keyboard-section { max-width: 980px; margin: 0 auto; }
+
+  .keyboard-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .keyboard {
+    background: #0c0f14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 16px 22px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+    user-select: none;
+  }
+
+  .kb-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
+
+  .key {
+    background: var(--key-bg);
+    border: 1px solid var(--key-border);
+    border-bottom: 3px solid var(--key-shadow);
+    border-radius: 4px;
+    color: var(--dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    height: 46px;
+    min-width: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    cursor: default;
+    transition: all 0.15s;
+    padding: 0 5px;
+  }
+
+  .key .top { font-size: 0.62rem; line-height: 1; }
+  .key .bot { font-size: 0.7rem; line-height: 1; }
+
+  .key.w-15 { min-width: 66px; }
+  .key.w-17 { min-width: 74px; }
+  .key.w-20 { min-width: 86px; }
+  .key.w-22 { min-width: 96px; }
+  .key.w-25 { min-width: 106px; }
+  .key.w-27 { min-width: 116px; }
+  .key.w-30 { min-width: 128px; }
+  .key.w-space { min-width: 240px; flex: 1; max-width: 300px; }
+
+  .key.lit {
+    background: rgba(0,255,157,0.15);
+    border-color: var(--accent);
+    border-bottom-color: rgba(0,255,157,0.3);
+    color: var(--accent);
+    box-shadow: 0 0 14px rgba(0,255,157,0.4), inset 0 0 8px rgba(0,255,157,0.1);
+    text-shadow: 0 0 8px rgba(0,255,157,0.9);
+    transform: translateY(1px);
+  }
+
+  .key.lit2 {
+    background: rgba(0,207,255,0.13);
+    border-color: var(--accent2);
+    border-bottom-color: rgba(0,207,255,0.3);
+    color: var(--accent2);
+    box-shadow: 0 0 14px rgba(0,207,255,0.35), inset 0 0 8px rgba(0,207,255,0.08);
+    text-shadow: 0 0 8px rgba(0,207,255,0.9);
+    transform: translateY(1px);
+  }
+
+  @media (max-width: 640px) {
+    .key { height: 32px; min-width: 28px; font-size: 0.5rem; }
+    .key .top { font-size: 0.44rem; }
+    .key .bot { font-size: 0.5rem; }
+    .key.w-15 { min-width: 46px; } .key.w-17 { min-width: 52px; }
+    .key.w-20 { min-width: 60px; } .key.w-22 { min-width: 68px; }
+    .key.w-25 { min-width: 74px; } .key.w-27 { min-width: 80px; }
+    .key.w-30 { min-width: 90px; } .key.w-space { min-width: 140px; max-width: 190px; }
+    .kb-row { gap: 3px; margin-bottom: 3px; }
+    .keyboard { padding: 10px 8px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&#9000; TERMINAL SHORTCUTS</h1>
+  <p>Interactive Cheat Sheet &mdash; Click any shortcut to highlight keys</p>
+</header>
+<div class="divider"></div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('navigation')">Navigation</button>
+  <button class="tab-btn" onclick="switchTab('editing')">Editing</button>
+  <button class="tab-btn" onclick="switchTab('process')">Process</button>
+  <button class="tab-btn" onclick="switchTab('history')">History</button>
+  <button class="tab-btn" onclick="switchTab('screen')">Screen / tmux</button>
+</div>
+
+<div class="shortcuts-panel">
+  <div class="category active" id="cat-navigation">
+    <div class="category-title">// cursor navigation</div>
+    <div class="shortcuts-grid">
+      <button class="shortcut-btn" onclick="highlight(['ctrl','a'])"><span class="btn-keys">Ctrl+A</span><span class="btn-desc">Move to beginning of line</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','e'])"><span class="btn-keys">Ctrl+E</span><span class="btn-desc">Move to end of line</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','f'])"><span class="btn-keys">Ctrl+F</span><span class="btn-desc">Move forward one char</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b'])"><span class="btn-keys">Ctrl+B</span><span class="btn-desc">Move backward one char</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','f'])"><span class="btn-keys">Alt+F</span><span class="btn-desc">Move forward one word</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','b'])"><span class="btn-keys">Alt+B</span><span class="btn-desc">Move backward one word</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','l'])"><span class="btn-keys">Ctrl+L</span><span class="btn-desc">Clear terminal screen</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','xx'])"><span class="btn-keys">Ctrl+XX</span><span class="btn-desc">Toggle cursor position</span></button>
+    </div>
+  </div>
+
+  <div class="category" id="cat-editing">
+    <div class="category-title">// line editing</div>
+    <div class="shortcuts-grid">
+      <button class="shortcut-btn" onclick="highlight(['ctrl','d'])"><span class="btn-keys">Ctrl+D</span><span class="btn-desc">Delete char under cursor</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','h'])"><span class="btn-keys">Ctrl+H</span><span class="btn-desc">Delete char before cursor</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','k'])"><span class="btn-keys">Ctrl+K</span><span class="btn-desc">Cut to end of line</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','u'])"><span class="btn-keys">Ctrl+U</span><span class="btn-desc">Cut to beginning of line</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','w'])"><span class="btn-keys">Ctrl+W</span><span class="btn-desc">Cut word before cursor</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','y'])"><span class="btn-keys">Ctrl+Y</span><span class="btn-desc">Paste (yank) cut text</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','d'])"><span class="btn-keys">Alt+D</span><span class="btn-desc">Cut word after cursor</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','t'])"><span class="btn-keys">Alt+T</span><span class="btn-desc">Swap current/prev word</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','t'])"><span class="btn-keys">Ctrl+T</span><span class="btn-desc">Swap last two chars</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','u'])"><span class="btn-keys">Alt+U</span><span class="btn-desc">Uppercase word</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','l'])"><span class="btn-keys">Alt+L</span><span class="btn-desc">Lowercase word</span></button>
+    </div>
+  </div>
+
+  <div class="category" id="cat-process">
+    <div class="category-title">// process control</div>
+    <div class="shortcuts-grid">
+      <button class="shortcut-btn" onclick="highlight(['ctrl','c'])"><span class="btn-keys">Ctrl+C</span><span class="btn-desc">Kill current process</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','z'])"><span class="btn-keys">Ctrl+Z</span><span class="btn-desc">Suspend (bg) process</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','d'])"><span class="btn-keys">Ctrl+D</span><span class="btn-desc">Send EOF / exit shell</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','s'])"><span class="btn-keys">Ctrl+S</span><span class="btn-desc">Stop output (XOFF)</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','q'])"><span class="btn-keys">Ctrl+Q</span><span class="btn-desc">Resume output (XON)</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','backslash'])"><span class="btn-keys">Ctrl+\</span><span class="btn-desc">Quit (SIGQUIT)</span></button>
+    </div>
+  </div>
+
+  <div class="category" id="cat-history">
+    <div class="category-title">// command history</div>
+    <div class="shortcuts-grid">
+      <button class="shortcut-btn" onclick="highlight(['ctrl','p'])"><span class="btn-keys">Ctrl+P</span><span class="btn-desc">Previous command</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','n'])"><span class="btn-keys">Ctrl+N</span><span class="btn-desc">Next command</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','r'])"><span class="btn-keys">Ctrl+R</span><span class="btn-desc">Reverse search history</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','g'])"><span class="btn-keys">Ctrl+G</span><span class="btn-desc">Abort history search</span></button>
+      <button class="shortcut-btn" onclick="highlight(['alt','dot'])"><span class="btn-keys">Alt+.</span><span class="btn-desc">Last argument of prev cmd</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','o'])"><span class="btn-keys">Ctrl+O</span><span class="btn-desc">Execute + advance history</span></button>
+    </div>
+  </div>
+
+  <div class="category" id="cat-screen">
+    <div class="category-title">// screen / tmux basics</div>
+    <div class="shortcuts-grid">
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','c'])"><span class="btn-keys">Ctrl+B, C</span><span class="btn-desc">New tmux window</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','n'])"><span class="btn-keys">Ctrl+B, N</span><span class="btn-desc">Next window</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','p'])"><span class="btn-keys">Ctrl+B, P</span><span class="btn-desc">Previous window</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','percent'])"><span class="btn-keys">Ctrl+B, %</span><span class="btn-desc">Split pane vertically</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','quote'])"><span class="btn-keys">Ctrl+B, "</span><span class="btn-desc">Split pane horizontally</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','d'])"><span class="btn-keys">Ctrl+B, D</span><span class="btn-desc">Detach session</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','x'])"><span class="btn-keys">Ctrl+B, X</span><span class="btn-desc">Close current pane</span></button>
+      <button class="shortcut-btn" onclick="highlight(['ctrl','b','z'])"><span class="btn-keys">Ctrl+B, Z</span><span class="btn-desc">Zoom/unzoom pane</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">&larr; Click a shortcut button to see keys highlighted on the keyboard below</div>
+
+<div class="keyboard-section">
+  <div class="keyboard-label">// interactive keyboard layout</div>
+  <div class="keyboard">
+    <div class="kb-row">
+      <div class="key w-15" data-key="esc"><span class="bot">ESC</span></div>
+      <div class="key" data-key="f1"><span class="top">F1</span></div>
+      <div class="key" data-key="f2"><span class="top">F2</span></div>
+      <div class="key" data-key="f3"><span class="top">F3</span></div>
+      <div class="key" data-key="f4"><span class="top">F4</span></div>
+      <div class="key" data-key="f5"><span class="top">F5</span></div>
+      <div class="key" data-key="f6"><span class="top">F6</span></div>
+      <div class="key" data-key="f7"><span class="top">F7</span></div>
+      <div class="key" data-key="f8"><span class="top">F8</span></div>
+      <div class="key" data-key="f9"><span class="top">F9</span></div>
+      <div class="key" data-key="f10"><span class="top">F10</span></div>
+      <div class="key" data-key="f11"><span class="top">F11</span></div>
+      <div class="key" data-key="f12"><span class="top">F12</span></div>
+    </div>
+    <div class="kb-row">
+      <div class="key" data-key="backtick"><span class="top">~</span><span class="bot">`</span></div>
+      <div class="key" data-key="1"><span class="top">!</span><span class="bot">1</span></div>
+      <div class="key" data-key="2"><span class="top">@</span><span class="bot">2</span></div>
+      <div class="key" data-key="3"><span class="top">#</span><span class="bot">3</span></div>
+      <div class="key" data-key="4"><span class="top">$</span><span class="bot">4</span></div>
+      <div class="key" data-key="5"><span class="top">%</span><span class="bot">5</span></div>
+      <div class="key" data-key="6"><span class="top">^</span><span class="bot">6</span></div>
+      <div class="key" data-key="7"><span class="top">&amp;</span><span class="bot">7</span></div>
+      <div class="key" data-key="8"><span class="top">*</span><span class="bot">8</span></div>
+      <div class="key" data-key="9"><span class="top">(</span><span class="bot">9</span></div>
+      <div class="key" data-key="0"><span class="top">)</span><span class="bot">0</span></div>
+      <div class="key" data-key="minus"><span class="top">_</span><span class="bot">-</span></div>
+      <div class="key" data-key="equals"><span class="top">+</span><span class="bot">=</span></div>
+      <div class="key w-20" data-key="backspace"><span class="bot">BKSP</span></div>
+    </div>
+    <div class="kb-row">
+      <div class="key w-17" data-key="tab"><span class="bot">TAB</span></div>
+      <div class="key" data-key="q"><span class="bot">Q</span></div>
+      <div class="key" data-key="w"><span class="bot">W</span></div>
+      <div class="key" data-key="e"><span class="bot">E</span></div>
+      <div class="key" data-key="r"><span class="bot">R</span></div>
+      <div class="key" data-key="t"><span class="bot">T</span></div>
+      <div class="key" data-key="y"><span class="bot">Y</span></div>
+      <div class="key" data-key="u"><span class="bot">U</span></div>
+      <div class="key" data-key="i"><span class="bot">I</span></div>
+      <div class="key" data-key="o"><span class="bot">O</span></div>
+      <div class="key" data-key="p"><span class="bot">P</span></div>
+      <div class="key" data-key="lbracket"><span class="top">{</span><span class="bot">[</span></div>
+      <div class="key" data-key="rbracket"><span class="top">}</span><span class="bot">]</span></div>
+      <div class="key w-20" data-key="backslash"><span class="top">|</span><span class="bot">\</span></div>
+    </div>
+    <div class="kb-row">
+      <div class="key w-20" data-key="capslock"><span class="bot">CAPS</span></div>
+      <div class="key" data-key="a"><span class="bot">A</span></div>
+      <div class="key" data-key="s"><span class="bot">S</span></div>
+      <div class="key" data-key="d"><span class="bot">D</span></div>
+      <div class="key" data-key="f"><span class="bot">F</span></div>
+      <div class="key" data-key="g"><span class="bot">G</span></div>
+      <div class="key" data-key="h"><span class="bot">H</span></div>
+      <div class="key" data-key="j"><span class="bot">J</span></div>
+      <div class="key" data-key="k"><span class="bot">K</span></div>
+      <div class="key" data-key="l"><span class="bot">L</span></div>
+      <div class="key" data-key="semicolon"><span class="top">:</span><span class="bot">;</span></div>
+      <div class="key" data-key="quote"><span class="top">"</span><span class="bot">'</span></div>
+      <div class="key w-25" data-key="enter"><span class="bot">ENTER</span></div>
+    </div>
+    <div class="kb-row">
+      <div class="key w-27" data-key="shift"><span class="bot">SHIFT</span></div>
+      <div class="key" data-key="z"><span class="bot">Z</span></div>
+      <div class="key" data-key="x"><span class="bot">X</span></div>
+      <div class="key" data-key="c"><span class="bot">C</span></div>
+      <div class="key" data-key="v"><span class="bot">V</span></div>
+      <div class="key" data-key="b"><span class="bot">B</span></div>
+      <div class="key" data-key="n"><span class="bot">N</span></div>
+      <div class="key" data-key="m"><span class="bot">M</span></div>
+      <div class="key" data-key="comma"><span class="top">&lt;</span><span class="bot">,</span></div>
+      <div class="key" data-key="period"><span class="top">&gt;</span><span class="bot">.</span></div>
+      <div class="key" data-key="slash"><span class="top">?</span><span class="bot">/</span></div>
+      <div class="key w-30" data-key="rshift"><span class="bot">SHIFT</span></div>
+    </div>
+    <div class="kb-row">
+      <div class="key w-15" data-key="ctrl"><span class="bot">CTRL</span></div>
+      <div class="key w-15" data-key="super"><span class="bot">WIN</span></div>
+      <div class="key w-15" data-key="alt"><span class="bot">ALT</span></div>
+      <div class="key w-space" data-key="space"><span class="bot">SPACE</span></div>
+      <div class="key w-15" data-key="altgr"><span class="bot">ALT GR</span></div>
+      <div class="key w-15" data-key="fn"><span class="bot">FN</span></div>
+      <div class="key w-15" data-key="rctrl"><span class="bot">CTRL</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const keyMap = {
+    'ctrl':['ctrl','rctrl'],'alt':['alt','altgr'],'shift':['shift','rshift'],
+    'a':['a'],'b':['b'],'c':['c'],'d':['d'],'e':['e'],'f':['f'],'g':['g'],
+    'h':['h'],'i':['i'],'j':['j'],'k':['k'],'l':['l'],'m':['m'],'n':['n'],
+    'o':['o'],'p':['p'],'q':['q'],'r':['r'],'s':['s'],'t':['t'],'u':['u'],
+    'v':['v'],'w':['w'],'x':['x'],'y':['y'],'z':['z'],
+    'backslash':['backslash'],'percent':['5'],'quote':['quote'],'dot':['period'],'xx':['x'],
+  };
+
+  const descs = {
+    'ctrl+a':'Move to beginning of line','ctrl+e':'Move to end of line',
+    'ctrl+f':'Move forward one character','ctrl+b':'Move backward one character',
+    'ctrl+l':'Clear the terminal screen','ctrl+k':'Cut from cursor to end of line',
+    'ctrl+u':'Cut from cursor to start of line','ctrl+w':'Cut word before cursor',
+    'ctrl+y':'Paste (yank) the last cut text','ctrl+c':'Send SIGINT — kill current process',
+    'ctrl+z':'Suspend process to background','ctrl+d':'Send EOF / exit current shell',
+    'ctrl+r':'Reverse search through command history','ctrl+p':'Previous command in history',
+    'ctrl+n':'Next command in history','ctrl+t':'Swap last two characters',
+    'ctrl+s':'Stop terminal output (XOFF)','ctrl+q':'Resume terminal output (XON)',
+    'ctrl+h':'Delete character before cursor','ctrl+g':'Abort current history search',
+    'ctrl+o':'Execute command and advance in history','ctrl+xx':'Toggle cursor position',
+    'alt+f':'Move forward one word','alt+b':'Move backward one word',
+    'alt+d':'Cut word after cursor','alt+t':'Swap current word with previous',
+    'alt+u':'Uppercase the current word','alt+l':'Lowercase the current word',
+    'alt+dot':'Insert last argument of previous command',
+    'ctrl+b+c':'tmux: Create new window','ctrl+b+n':'tmux: Switch to next window',
+    'ctrl+b+p':'tmux: Switch to previous window','ctrl+b+d':'tmux: Detach from session',
+    'ctrl+b+x':'tmux: Close current pane','ctrl+b+z':'tmux: Zoom/unzoom pane',
+    'ctrl+b+percent':'tmux: Split pane vertically','ctrl+b+quote':'tmux: Split pane horizontally',
+  };
+
+  let activeBtn = null;
+
+  function clearKeys() {
+    document.querySelectorAll('.key').forEach(k => k.classList.remove('lit','lit2'));
+  }
+
+  function litKey(k, cls='lit') {
+    (keyMap[k]||[k]).forEach(id => {
+      document.querySelectorAll(`[data-key="${id}"]`).forEach(el => el.classList.add(cls));
+    });
+  }
+
+  function highlight(keys) {
+    clearKeys();
+    if (activeBtn) activeBtn.classList.remove('active');
+    if (event && event.currentTarget) {
+      event.currentTarget.classList.add('active');
+      activeBtn = event.currentTarget;
+    }
+    if (keys.length >= 3 && keys[0]==='ctrl' && keys[1]==='b') {
+      litKey('ctrl','lit'); litKey('b','lit'); litKey(keys[2],'lit2');
+    } else {
+      keys.forEach(k => litKey(k, ['ctrl','alt','shift'].includes(k) ? 'lit' : 'lit2'));
+    }
+    const combo = keys.join('+').toLowerCase();
+    const desc = descs[combo] || '';
+    const display = keys.map(k => k==='ctrl'?'Ctrl':k==='alt'?'Alt':k==='shift'?'Shift':k.toUpperCase()).join(' + ');
+    document.getElementById('tooltip').textContent = desc ? `${display}  →  ${desc}` : `${display}  →  Keys highlighted above`;
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('cat-'+name).classList.add('active');
+    event.currentTarget.classList.add('active');
+    clearKeys();
+    if (activeBtn) { activeBtn.classList.remove('active'); activeBtn = null; }
+    document.getElementById('tooltip').textContent = '\u2190 Click a shortcut button to see keys highlighted on the keyboard below';
+  }
+</script>
+</body>
+</html>
