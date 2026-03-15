@@ -604,22 +604,34 @@ const pbInterval = setInterval(() => {
 const termBody = document.getElementById('terminal-body');
 const cmdInput = document.getElementById('cmd-input');
 
+// Build dirMap dynamically from nav buttons
+const dirMap = {};
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  const path = btn.getAttribute('data-path').replace(/^\//, '');
+  dirMap[path] = btn.getAttribute('href');
+});
+
 const commands = {
-  help: `Available commands: whoami, skills, status, contact, crack, nmap, ls, clear\ncd <dir>  →  navigate to /ad /crtp /kerberos /redteam /htb`,
+  get help() {
+    const dirs = Object.keys(dirMap).join(', ');
+    return `Available commands: whoami, skills, status, contact, crack, nmap, ls, clear\ncd <dir>  →  navigate to: ${dirs}`;
+  },
   whoami: `uid=0(root) gid=0(root) groups=0(root)\nUser: AJAI | Role: Red Team Operator | Cert: CRTP (pending)`,
   skills: `[*] Active Directory Attacks\n[*] Kerberos: AS-REP, Kerberoast, Golden/Silver Ticket\n[*] BloodHound CE, Mimikatz, Rubeus, Impacket\n[*] HackTheBox | VulnLab | CRTP`,
   status: `[+] VPN: CONNECTED\n[+] Firewall: ACTIVE\n[+] TOR: ENABLED\n[+] Identity: MASKED`,
   contact: `[*] Reach me on the dark web... or LinkedIn.\n[*] Signal fingerprint: 1337-AJAI-REDTEAM`,
   crack: `[*] Initiating hashcat...\n[+] Hash: $krb5tgs$23$*...\n[+] Cracking with rockyou.txt...\n[!!] PASSWORD FOUND: P@ssw0rd!`,
   nmap: `Starting Nmap 7.94 ( https://nmap.org )\nHost is up (0.0023s latency).\nPORT   STATE SERVICE\n22/tcp open  ssh\n80/tcp open  http\n445/tcp open  smb\n[+] Interesting ports found!`,
-  ls: `drwxr-xr-x  crtp/\ndrwxr-xr-x  kerberos/\ndrwxr-xr-x  mimikatz/\n-rw-r--r--  index.html`,
+  get ls() {
+    const dirs = Array.from(document.querySelectorAll('.nav-btn'))
+      .map(btn => {
+        const path = btn.getAttribute('data-path').replace(/^\//, '');
+        return `drwxr-xr-x  ${path}/`;
+      })
+      .join('\n');
+    return `total ${document.querySelectorAll('.nav-btn').length + 1}\n${dirs}\n-rw-r--r--  index.html`;
+  },
   clear: null,
-};
-
-const dirMap = {
-  'crtp': 'crtp/',
-  'kerberos': 'kerberos/',
-  'mimikatz': 'mimikatz/',
 };
 
 function printLine(text, cls='term-line') {
@@ -652,7 +664,7 @@ cmdInput.addEventListener('keydown', e => {
         printLine(`[*] Navigating to /${target}...`, 'term-line success');
         setTimeout(() => { window.location.href = dirMap[target]; }, 600);
       } else {
-        printLine(`cd: ${target}: No such directory\nAvailable: ad, crtp, kerberos, redteam, htb`, 'term-line err');
+        printLine(`cd: ${target}: No such directory\nAvailable: ${Object.keys(dirMap).join(', ')}`, 'term-line err');
       }
     } else if (cmd === 'clear') {
       termBody.innerHTML = '';
