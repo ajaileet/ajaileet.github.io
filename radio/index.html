@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9W3AJI — Amateur Radio Class C Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #1a1d26;
+    --border: #252833;
+    --accent: #00e5a0;
+    --accent2: #0088ff;
+    --danger: #ff4757;
+    --warn: #ffa502;
+    --text: #e8eaf0;
+    --muted: #6b7080;
+    --correct: #00e5a0;
+    --wrong: #ff4757;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 1; }
+
+  /* ===== HEADER ===== */
+  .header {
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+  }
+  .logo span { color: var(--accent); }
+  .callsign {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.15em;
+  }
+  .header-right { text-align: right; font-size: 0.7rem; color: var(--muted); }
+
+  /* ===== SCREEN SYSTEM ===== */
+  .screen { display: none; animation: fadeIn 0.3s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ===== HOME SCREEN ===== */
+  .hero {
+    padding: 48px 0 32px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { color: var(--muted); font-size: 0.85rem; line-height: 1.7; max-width: 480px; margin: 0 auto 32px; }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .section-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s;
+  }
+  .section-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .section-card:hover::before { transform: scaleX(1); }
+  .section-card.selected { border-color: var(--accent); background: rgba(0,229,160,0.06); }
+  .section-card.selected::before { transform: scaleX(1); }
+  .section-num { font-size: 0.65rem; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 6px; }
+  .section-name { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+  .section-count { font-size: 0.7rem; color: var(--muted); }
+  .check-icon { position: absolute; top: 16px; right: 16px; color: var(--accent); font-size: 1.1rem; opacity: 0; transition: opacity 0.2s; }
+  .section-card.selected .check-icon { opacity: 1; }
+
+  .options-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .option-btn {
+    flex: 1;
+    min-width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+  }
+  .option-btn:hover { border-color: var(--accent2); }
+  .option-btn.selected { border-color: var(--accent2); background: rgba(0,136,255,0.08); }
+  .option-label { font-size: 0.65rem; color: var(--accent2); letter-spacing: 0.1em; margin-bottom: 4px; }
+  .option-text { font-size: 0.8rem; font-weight: 700; }
+
+  .btn-start {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-start:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ===== QUIZ SCREEN ===== */
+  .quiz-header {
+    padding: 20px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .quiz-meta { flex: 1; }
+  .progress-label { font-size: 0.65rem; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+  .score-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    text-align: center;
+    min-width: 80px;
+  }
+  .score-badge .score-num { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--accent); }
+  .score-badge .score-lbl { font-size: 0.6rem; color: var(--muted); }
+
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 16px;
+  }
+  .q-section-tag {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--accent2);
+    background: rgba(0,136,255,0.1);
+    border: 1px solid rgba(0,136,255,0.2);
+    border-radius: 4px;
+    padding: 3px 8px;
+    margin-bottom: 14px;
+  }
+  .q-number { font-size: 0.65rem; color: var(--muted); margin-bottom: 10px; }
+  .q-text {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    margin-bottom: 24px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 400;
+  }
+
+  .options-list { display: flex; flex-direction: column; gap: 10px; }
+  .option-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: all 0.2s;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .option-item:hover:not(.disabled) { border-color: var(--accent2); background: rgba(0,136,255,0.05); }
+  .option-item.disabled { cursor: default; }
+  .option-letter {
+    width: 26px; height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .option-item:hover:not(.disabled) .option-letter { border-color: var(--accent2); color: var(--accent2); }
+  .option-item.correct { border-color: var(--correct); background: rgba(0,229,160,0.08); }
+  .option-item.correct .option-letter { border-color: var(--correct); background: var(--correct); color: #000; }
+  .option-item.wrong { border-color: var(--wrong); background: rgba(255,71,87,0.08); }
+  .option-item.wrong .option-letter { border-color: var(--wrong); background: var(--wrong); color: #fff; }
+
+  .feedback-bar {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  .feedback-bar.show { display: flex; animation: slideIn 0.2s ease; }
+  .feedback-bar.correct-fb { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.3); color: var(--correct); }
+  .feedback-bar.wrong-fb { background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3); color: var(--wrong); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .quiz-nav {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .btn { border: none; border-radius: 8px; padding: 12px 20px; font-family: 'Space Mono', monospace; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+  .btn-primary { background: var(--accent); color: #000; font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-danger { background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); color: var(--danger); }
+  .btn-danger:hover { background: rgba(255,71,87,0.25); }
+
+  /* ===== MODE TOGGLE ===== */
+  .mode-badge {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 0.65rem;
+  }
+  .mode-tab {
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+  }
+  .mode-tab.active { background: var(--accent); color: #000; font-weight: 700; }
+
+  /* ===== RESULTS SCREEN ===== */
+  .results-hero {
+    text-align: center;
+    padding: 40px 0 32px;
+  }
+  .big-score {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(4rem, 12vw, 7rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .big-score.pass { color: var(--accent); }
+  .big-score.fail { color: var(--danger); }
+  .result-verdict {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .result-detail { font-size: 0.75rem; color: var(--muted); }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 24px 0;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+  .stat-lbl { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+  .stat-card.green .stat-num { color: var(--correct); }
+  .stat-card.red .stat-num { color: var(--danger); }
+  .stat-card.blue .stat-num { color: var(--accent2); }
+
+  .review-list { margin-top: 8px; }
+  .review-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--danger);
+  }
+  .review-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--danger);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+  }
+  .review-q { line-height: 1.5; margin-bottom: 8px; color: var(--text); }
+  .review-answers { display: flex; flex-direction: column; gap: 4px; font-size: 0.72rem; }
+  .review-wrong { color: var(--danger); }
+  .review-right { color: var(--correct); }
+
+  .results-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  .results-actions .btn { flex: 1; min-width: 140px; text-align: center; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 560px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .question-card { padding: 18px; }
+    .big-score { font-size: 4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <div>
+      <div class="logo">9W3<span>AJI</span> · MCMC Class C</div>
+      <div class="callsign">AMATEUR RADIO QUESTION BANK</div>
+    </div>
+    <div class="header-right">MCMC © 2022<br>Revision: 2024</div>
+  </header>
+
+  <!-- HOME -->
+  <div id="screen-home" class="screen active">
+    <div class="hero">
+      <h1>Class C<br><em>Exam Prep</em></h1>
+      <p>Practice all MCMC Class C Amateur Radio questions. Select sections, choose your mode, and start drilling.</p>
+    </div>
+
+    <div class="section-grid" id="section-grid">
+      <div class="section-card" data-sec="0" onclick="toggleSection(0)">
+        <span class="check-icon">✓</span>
+        <div class="section-num">SECTION 01</div>
+        <div class="section-name">Operating Rules &amp; Regulations</div>
+        <div class="section-count" id="count-0">— questions</div>
+      </div>
+      <div class="section-card" data-sec="1" onclick="toggleSection(1)">
+        <span class="check-icon">✓</span>
+        <div class="section-num">SECTION 02</div>
+        <div class="section-name">Radio &amp; Electromagnetic Theory</div>
+        <div class="section-count" id="count-1">— questions</div>
+      </div>
+      <div class="section-card" data-sec="2" onclick="toggleSection(2)">
+        <span class="check-icon">✓</span>
+        <div class="section-num">SECTION 03</div>
+        <div class="section-name">Antenna &amp; Radio Propagation</div>
+        <div class="section-count" id="count-2">— questions</div>
+      </div>
+      <div class="section-card" data-sec="3" onclick="toggleSection(3)">
+        <span class="check-icon">✓</span>
+        <div class="section-num">SECTION 04</div>
+        <div class="section-name">Setup &amp; Safety</div>
+        <div class="section-count" id="count-3">— questions</div>
+      </div>
+    </div>
+
+    <div class="options-row">
+      <button class="option-btn selected" data-mode="practice" onclick="selectMode('practice')">
+        <div class="option-label">MODE</div>
+        <div class="option-text">Practice</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px">Instant feedback</div>
+      </button>
+      <button class="option-btn" data-mode="exam" onclick="selectMode('exam')">
+        <div class="option-label">MODE</div>
+        <div class="option-text">Exam</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px">Score at the end</div>
+      </button>
+      <button class="option-btn selected" data-shuffle="true" onclick="toggleShuffle()">
+        <div class="option-label">ORDER</div>
+        <div class="option-text" id="shuffle-label">Shuffled</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px">Random order</div>
+      </button>
+    </div>
+
+    <button class="btn-start" id="btn-start" onclick="startQuiz()">START QUIZ</button>
+    <div style="text-align:center;font-size:0.65rem;color:var(--muted);margin-top:12px;" id="total-label">Select sections above</div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <div class="progress-label">
+          <span id="q-counter">Question 1 of 20</span>
+          <span id="q-section-label">—</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+      <div class="score-badge">
+        <div class="score-num" id="live-score">0</div>
+        <div class="score-lbl">SCORE</div>
+      </div>
+      <button class="btn btn-danger" onclick="endQuiz()" style="padding:8px 12px;font-size:0.65rem;">END</button>
+    </div>
+
+    <div class="question-card">
+      <div class="q-section-tag" id="q-tag">OPERATING RULES</div>
+      <div class="q-number" id="q-num">Q1</div>
+      <div class="q-text" id="q-text">Loading...</div>
+      <div class="options-list" id="options-list"></div>
+    </div>
+
+    <div class="feedback-bar" id="feedback-bar">
+      <span id="feedback-icon">✓</span>
+      <span id="feedback-text">Correct!</span>
+    </div>
+
+    <div class="quiz-nav">
+      <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()" disabled>NEXT →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="screen-results" class="screen">
+    <div class="results-hero">
+      <div class="big-score" id="result-pct">0%</div>
+      <div class="result-verdict" id="result-verdict">—</div>
+      <div class="result-detail" id="result-detail">—</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-num" id="stat-correct">0</div>
+        <div class="stat-lbl">CORRECT</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-num" id="stat-wrong">0</div>
+        <div class="stat-lbl">WRONG</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-lbl">TOTAL</div>
+      </div>
+    </div>
+
+    <div class="review-list" id="review-list"></div>
+
+    <div class="results-actions">
+      <button class="btn btn-secondary" onclick="showHome()">← HOME</button>
+      <button class="btn btn-primary" onclick="retryWrong()" id="btn-retry-wrong">RETRY WRONG</button>
+      <button class="btn btn-primary" onclick="startQuizAgain()">AGAIN ↻</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// QUESTION BANK — All 4 Sections
+// A=0, B=1, C=2, D=3
+// ============================================================
+const SECTIONS = ['Operating Rules & Regulations', 'Radio & EM Theory', 'Antenna & Propagation', 'Setup & Safety'];
+const SECTION_TAGS = ['OPERATING RULES', 'RADIO THEORY', 'ANTENNA & PROP', 'SETUP & SAFETY'];
+
+const QUESTIONS = [
+// ─── SECTION 0: Operating Rules & Regulations ───────────────
+{s:0, q:"The Amateur Service may be briefly defined as:", o:["A private radio service for personal gain and public benefit","A public radio service used for public service communications","A radiocommunications service for the purpose of self-training, intercommunication and technical investigation","A private radio service intended only for emergency communications"], a:2},
+{s:0, q:"The organisation responsible for the International Radio Regulations is the:", o:["European Radiocommunications Office","United Nations","International Telecommunication Union","European Telecommunication Standards Institute"], a:2},
+{s:0, q:"For regulatory purposes the world is divided into regions. Malaysia is located in:", o:["Region 1","Region 2","Region 3","Region 4"], a:2},
+{s:0, q:"Which agency regulates and enforces the rules for the Amateur Radio Service Malaysia?", o:["MCMC","ITU","FCC","IARU"], a:0},
+{s:0, q:"An Amateur Station is a station in the Amateur Service and Amateur-satellite Service. Which option correctly defines it?", o:["In the public radio service","Using radiocommunications for a commercial purpose","Using equipment for training new radiocommunications operators","In the Amateur Service and Amateur-satellite Service"], a:3},
+{s:0, q:"The fundamental regulations controlling the Amateur Service are to be found in:", o:["The International Radio Regulations from the ITU","The Radio Amateur's Handbook","The callsign book","On the radio bulletin-board"], a:0},
+{s:0, q:"You must keep the following document at your amateur station:", o:["Your Amateur Operator Apparatus Assignment","A copy of the Rules and Regulations for the Amateur Service","A copy of the Radio Amateur's Handbook for instant reference","A chart showing the amateur radio band"], a:0},
+{s:0, q:"If the qualified operator of an amateur radio station is absent overseas, the home station may be used by:", o:["Any member of the immediate family to maintain contact with only the qualified operator","Any person with an appropriate Amateur Radio Apparatus Assignment","The immediate family to communicate with any amateur radio operator","The immediate family if a separate callsign for mobile use has been obtained"], a:1},
+{s:0, q:"An Amateur Station is one which is operated by the holder of an Amateur Radio Apparatus Assignment on the amateur radio bands. Which option is correct?", o:["Operated by the holder of an Amateur Radio Apparatus Assignment on the amateur radio bands","Owned and operated by a person not engaged professionally in radio communications","Used exclusively to provide two-way communication for amateur sporting organisations","Used primarily for emergency communications during floods and disasters"], a:0},
+{s:0, q:"An amateur station may transmit unidentified signals:", o:["When making a brief test not intended for reception by anyone else","When conducted on a clear frequency when no interference will be caused","When the meaning of transmitted information must be obscured to preserve secrecy","Never, such transmissions are not permitted"], a:3},
+{s:0, q:"Before operating an amateur station in a motor vehicle, you must:", o:["Give the Land Transport Authority the vehicle's licence plate number","Inform the Ministry of Communication & Multimedia","Hold a current amateur radio apparatus assignment","Obtain an additional callsign"], a:2},
+{s:0, q:"If you transmit from another amateur's station, the person responsible for its proper operation is:", o:["Both of you","The other amateur (the station's owner)","You, the operator","The station owner, unless the station records show that you were the operator at the time"], a:2},
+{s:0, q:"An amateur station must have a qualified operator:", o:["Only when training another amateur","Whenever the station receiver is operated","Whenever the station is used for transmitting","When transmitting and receiving"], a:2},
+{s:0, q:"A logbook for recording stations worked:", o:["Is compulsory for every amateur radio operator","Is recommended for all amateur radio operators","Must list all messages sent","Must record time in UTC"], a:1},
+{s:0, q:"Unqualified persons in your family cannot transmit using your amateur station if they are alone because they must:", o:["Not use your equipment without your permission","Hold a valid Amateur Radio Apparatus Assignment before they are allowed to operate","First know how to use the right abbreviations and Q signals","First know the right frequencies and emissions for transmitting"], a:1},
+{s:0, q:"The minimum age for a person to hold a Class C licence is:", o:["12 years","16 years","21 years","There is no age limit"], a:3},
+{s:0, q:"The maximum power output permitted from a Class C amateur station is:", o:["Amount that needed to overcome interference from other stations","25 watt PEP","As per radio maximum power","500 watt PEP"], a:1},
+{s:0, q:"You identify your amateur station by transmitting your:", o:["\"handle\"","Callsign","First name and your location","Full name"], a:1},
+{s:0, q:"These letters are generally used for the prefix in Malaysian amateur radio callsigns:", o:["9M","ZL","VK","LZ"], a:0},
+{s:0, q:"If you hear distress traffic and are unable to render assistance, you should:", o:["Maintain watch until you are certain that assistance is forthcoming","Enter the details in the logbook and take no further action","Take no action","Tell all other stations to cease transmitting"], a:0},
+{s:0, q:"You hear a station using the callsign \"AF8DEN stroke 9M2\" on your local VHF repeater. This is:", o:["A callsign not authorised for use in Malaysia","A confused illegal operator","The station of an amateur visitor","Probably an unlicensed person using stolen equipment"], a:2},
+{s:0, q:"A Malaysian Amateur Radio Operator Certificate allows you to operate:", o:["Anywhere in the world","Anywhere in Malaysia and in any other country that recognises the Certificate","Within 50 km of your home station location","Only at your home address"], a:1},
+{s:0, q:"With a Malaysian Amateur Radio Operator Certificate you may operate transmitters in your station:", o:["One at a time","One at a time, except for emergency communications","Any number at one time","Any number, so long as they are transmitting on different bands"], a:2},
+{s:0, q:"All amateur stations, regardless of the mode of transmission used, must be equipped with:", o:["A reliable means for determining the operating radio frequency","A dummy antenna","An overmodulation indicating device","A DC power meter"], a:0},
+{s:0, q:"Your responsibility as a station operator is that you must:", o:["Allow another amateur to operate your station upon request","Be present whenever the station is operated","Be responsible for the proper operation of the station in accordance with the Radiocommunications Regulations","Notify the MCMC another amateur acts as the operator"], a:2},
+{s:0, q:"The minimum age for a person to hold a Class B licence is:", o:["14 years","16 years","21 years","There is no age limit"], a:3},
+{s:0, q:"The minimum age for a person to hold a Class A licence is:", o:["12 years","15 years","21 years","There is no age limit"], a:3},
+{s:0, q:"If you contact another station and your signal is strong and perfectly readable, you should:", o:["Turn on your speech processor","Reduce your SWR","Not make any changes, otherwise you may lose contact","Reduce your transmitter power output to the minimum needed to maintain contact"], a:3},
+{s:0, q:"The age when an amateur radio operator is required to surrender the apparatus assignment is:", o:["65 years","70 years","75 years","There is no age limit"], a:3},
+{s:0, q:"The frequency limits of the \"2 meter band\" are:", o:["144 to 149 MHz","144 to 148 MHz","146 to 148 MHz","144 to 150 MHz"], a:1},
+{s:0, q:"The frequency limits of the \"70 centimeter band\" are:", o:["430 to 440 MHz","430 to 450 MHz","435 to 438 MHz","430 to 460 MHz"], a:1},
+{s:0, q:"Two bands where amateur satellites may operate are:", o:["28.0 to 29.7 MHz and 144.0 to 146.0 MHz","21.0 to 21.1 MHz and 146.0 to 148.0 MHz","3.5 to 3.8 MHz and 7.0 to 7.1 MHz","7.1 to 7.3 MHz and 10.1 to 10.15 MHz"], a:0},
+{s:0, q:"The published Malaysia amateur radio band plans are:", o:["Obligatory for all amateur radio operators to observe","Recommended, and all amateur radio operators should follow them","To show where distant stations can be worked","For tests and experimental purposes only"], a:1},
+{s:0, q:"When the Amateur Service is a secondary user of a band and another service is the primary user, this means:", o:["Nothing at all, all users have equal rights to operate","Amateurs may only use the band during emergencies","The band may be used by amateurs provided they do not cause harmful interference to primary users","You may increase transmitter power to overcome any interference caused by primary users"], a:2},
+{s:0, q:"You hear a member of your radio club being abused on air. Another amateur has joined in to protect the abused person. You should:", o:["Also join in the protection to add weight of numbers","Press the PTT switch to try to block out the abuser","Inform the abuser that such language is not really acceptable","Stay out of the matter and chat later"], a:3},
+{s:0, q:"An amateur station may be used to communicate with:", o:["Any stations which are identified for special contests","Armed forces stations during special contests and training exercises","Similar licensed stations","Any station transmitting in the amateur bands"], a:2},
+{s:0, q:"Which of the following CANNOT be discussed on an amateur club net?", o:["Recreation planning","Code practice planning","Emergency planning","Business planning"], a:3},
+{s:0, q:"When is a radio amateur allowed to broadcast information to the general public?", o:["Never","Only when the operator is being paid","Only when broadcasts last less than 1 hour","Only when broadcasts last longer than 15 minutes"], a:0},
+{s:0, q:"When may false or deceptive amateur signals or communications be transmitted?", o:["Never","When operating a beacon transmitter in a \"fox hunt\" exercise","When playing a harmless \"practical joke\"","When you need to hide the meaning of a message for secrecy"], a:0},
+{s:0, q:"Which of the following one-way communications may NOT be transmitted in the amateur service?", o:["Broadcasts intended for the general public","Telecommands to model craft","Brief transmissions to make adjustments to the station","Morse code practice"], a:0},
+{s:0, q:"When may you send indecent or profane words from your amateur station?", o:["Never","Only when they do not cause interference to other communications","Only when they are not retransmitted through a repeater","Any time, but there is an unwritten rule among amateurs that they should not be used"], a:0},
+{s:0, q:"When may an amateur station in two-way communication transmit a message in a secret code to obscure the meaning?", o:["During a declared communications emergency","During contests","Never","When transmitting above 450 MHz"], a:2},
+{s:0, q:"What are the restrictions on the use of abbreviations or procedural signals in the amateur service?", o:["There are no restrictions","They are not permitted because they obscure the meaning of a message to government monitoring stations","Only '10 codes' are permitted","They may be used if they do not obscure the meaning of a message"], a:3},
+{s:0, q:"What should you do to keep your station from retransmitting music or signals from a non-amateur station?", o:["Turn up the volume of your transmitter","Speak closer to the microphone to increase your signal strength","Adjust your transceiver noise blanker","Turn down the volume of background audio"], a:3},
+{s:0, q:"The transmission of a secret code by the operator of an amateur station:", o:["Is permitted for contests","Must be approved by MCMC","Is not permitted","Is permitted for third-party traffic"], a:2},
+{s:0, q:"A radio amateur may be engaged in communication which includes the transmission of:", o:["Programming that originates from a broadcasting undertaking","Q signals","Radiocommunication in support of industrial, business, or professional activities","Commercially recorded material"], a:1},
+{s:0, q:"An amateur station may transmit:", o:["Profane or obscene words or language","Music","Secret codes or ciphers","Signals which are not superfluous"], a:3},
+{s:0, q:"Where may the holder of an Amateur Radio Operator Certificate operate an amateur radio station in Malaysia?", o:["Anywhere in Malaysia","Anywhere in Malaysia during times of emergency","Only at the address shown on MCMC records","Anywhere in your call sign prefix area"], a:0},
+{s:0, q:"Which type of station may transmit one-way communications?", o:["Beacon station","Repeater station","HF station","VHF station"], a:0},
+{s:0, q:"Amateur radio operators may install or operate radio apparatus:", o:["At any location in Malaysia","Only at the address which is on record at MCMC","At the address which is on record at MCMC and at one other location","At the address which is on record at MCMC and in two mobiles"], a:0},
+{s:0, q:"What is your responsibility as a station owner?", o:["You must allow another amateur to operate your station upon request","You must be present whenever the station is operated","You must notify MCMC if another amateur acts as the control operator","You are responsible for the proper operation of the station in accordance with the regulations"], a:3},
+{s:0, q:"When must an amateur station have a control operator?", o:["Whenever the station is operating","Whenever the station receiver is operated","Whenever the station is transmitting","Only when training another amateur"], a:2},
+{s:0, q:"When a station is transmitting, where must its control operator be?", o:["Anywhere in the same building as the transmitter","At the station's entrance, to control entry to the room","Anywhere within 50 km of the station location","At the station's control point"], a:3},
+{s:0, q:"Why can't family members without qualifications transmit using your amateur station if they are alone?", o:["They must not use your equipment without your permission","They must first know how to use the right abbreviations and Q signals","They must first know the right frequencies and emissions for transmitting","They must hold an amateur radio apparatus assignment before they are allowed to be control operators"], a:3},
+{s:0, q:"The owner of an amateur station may:", o:["Permit anyone to take part in communications only if prior written permission is received from MCMC","Permit anyone to use the station without restrictions","Permit any person to operate the station under the supervision and in the presence of the holder of the amateur operator certificate","Permit anyone to use the station and take part in communications"], a:2},
+{s:0, q:"What is a transmission called that disturbs other communications?", o:["Harmful interference","Interrupted CW","Transponder signals","Unidentified transmissions"], a:0},
+{s:0, q:"When may you deliberately interfere with another station's communications?", o:["Never","Only if the station is operating illegally","Only if the station begins transmitting on a frequency you are using","You may expect, and cause, deliberate interference because it can't be helped during crowded band conditions"], a:0},
+{s:0, q:"If the regulations say the amateur service is a secondary user of a frequency band, what does this mean?", o:["Amateurs are allowed to use the frequency band only if they do not cause interference to primary users","Nothing special: all users of a frequency band have equal rights to operate","Amateurs are only allowed to use the frequency band during emergencies","Amateurs must increase transmitter power to overcome any interference caused by primary users"], a:0},
+{s:0, q:"What rule applies if two amateur stations want to use the same frequency?", o:["Both station operators have an equal right to operate on the frequency","The station operator with a lesser class of license must yield the frequency to a higher-class licensee","The station operator with a lower power output must yield the frequency to the station with a higher power output","Station operators in ITU Regions 1 and 3 must yield the frequency to stations in ITU Region 2"], a:0},
+{s:0, q:"What name is given to a form of interference that seriously degrades, obstructs or repeatedly interrupts a radiocommunication service?", o:["Intentional interference","Adjacent interference","Disruptive interference","Harmful interference"], a:3},
+{s:0, q:"Where interference to the reception of radiocommunications is caused by the operation of an amateur station:", o:["The amateur station operator is not obligated to take any action","The amateur station operator may continue to operate without restrictions","MCMC may require that the necessary steps for the prevention of the interference be taken by the radio amateur","The amateur station operator may continue to operate and take steps when the amateur operator can afford it"], a:2},
+{s:0, q:"Amateur radio stations may communicate:", o:["With anyone who uses international Morse code","With non-amateur stations","With any station involved in a real or simulated emergency","Only with other amateur stations"], a:2},
+{s:0, q:"If you hear an unanswered distress signal on an amateur band where you do not have privileges to communicate:", o:["You may offer assistance using international Morse code only","You may offer assistance after contacting MCMC for permission to do so","You should offer assistance","You may not offer assistance"], a:2},
+{s:0, q:"In the amateur radio service, it is permissible to broadcast:", o:["Music","Commercially recorded material","Programming that originates from a broadcast undertaking","Radio communications required for the immediate safety of life of individuals or the immediate protection of property"], a:3},
+{s:0, q:"An amateur radio station in distress may:", o:["Only use radiocommunication bands for which the operator is qualified to use","Use any means of radiocommunication, but only on internationally recognized emergency channels","Use any means of radiocommunication","Only Morse code communications on internationally recognized emergency channels"], a:2},
+{s:0, q:"During a disaster, when may an amateur station make transmissions necessary to meet essential communication needs?", o:["Never: only official emergency stations may transmit in a disaster","When normal communication systems are overloaded, damaged or disrupted","When normal communication systems are working but are not convenient","Only when the local emergency net is activated"], a:1},
+{s:0, q:"How often must an amateur station be identified during simplex operation?", o:["At least every ten minutes, and at the beginning and at the end of a contact","At the beginning of a contact and at least every three minutes after that","At least once during each transmission","At the beginning and end of each transmission"], a:0},
+{s:0, q:"What do you transmit to identify your amateur station?", o:["Your 'handle'","Your first name and your location","Your full name","Your call sign"], a:3},
+{s:0, q:"What identification is required when two amateur stations begin communications?", o:["No identification is required","Each station must transmit its own call sign","Both stations must transmit both call signs","One of the stations must give both stations' call signs"], a:1},
+{s:0, q:"What identification is required when two amateur stations end communications?", o:["Each station must transmit its own call sign","No identification is required","One of the stations must transmit both stations' call signs","Both stations must transmit both call signs"], a:0},
+{s:0, q:"When may an amateur transmit unidentified communications?", o:["Only for brief tests not meant as messages","Only if it does not interfere with others","Only for two-way or third-party communications","Never"], a:3},
+{s:0, q:"What language may you use when identifying your station?", o:["English","Any language being used for a contact","Any language being used for a contact, providing Malaysia has a third-party communications agreement with that country","Any language of a country which is a member of the ITU"], a:1},
+{s:0, q:"Radio amateurs may use their stations to transmit international communications on behalf of a third party only if:", o:["The amateur station has received written authorization from MCMC to pass third party traffic","The communication is transmitted by secret code","Such communications have been authorized by the countries concerned","Prior remuneration has been received"], a:2},
+{s:0, q:"Amateur third-party communications is:", o:["The transmission of commercial or secret messages","A simultaneous communication between three operators","None of these answers","The transmission of non-commercial or personal messages to or on behalf of a third party"], a:3},
+{s:0, q:"Third-party traffic is:", o:["Any message passed by an amateur station","Coded communications of any type","A message sent to a non-amateur via an amateur station","Any communication between two amateur operators"], a:2},
+{s:0, q:"If you let another amateur with additional qualifications control your station, what operating privileges are allowed?", o:["Only the privileges allowed by your qualifications","Any privileges allowed by the additional qualifications","All the emission privileges of the additional qualifications, but only the frequency privileges of your qualifications","All the frequency privileges of the additional qualifications, but only the emission privileges of your qualifications"], a:1},
+{s:0, q:"If you are the control operator at the station of another amateur who has additional qualifications to yours, what operating privileges are you allowed?", o:["Any privileges allowed by the additional qualifications","All the emission privileges of the additional qualifications, but only the frequency privileges of your qualifications","All the frequency privileges of the additional qualifications, but only the emission privileges of your qualifications","Only the privileges allowed by your qualifications"], a:3},
+{s:0, q:"What is a good way to make contact on a repeater?", o:["Say the other operator's name, then your call sign three times","Say the call sign of the station you want to contact, then your call sign","Say 'Breaker, breaker,' then your call sign","Say the call sign of the station you want to contact three times"], a:1},
+{s:0, q:"How do you call another station on a repeater if you know the station's call sign?", o:["Say the station's call sign, then identify your own station","Say 'break, break 79,' then say the station's call sign","Say 'CQ' three times, then say the station's call sign","Wait for the station to call 'CQ', then answer it"], a:0},
+{s:0, q:"Why should you pause briefly between transmissions when using a repeater?", o:["To check the SWR of the repeater","To reach for pencil and paper for third-party communications","To dial up the repeater's autopatch","To listen for anyone else wanting to use the repeater"], a:3},
+{s:0, q:"Why should you keep transmissions short when using a repeater?", o:["To keep long-distance charges down","To give any listening non-hams a chance to respond","A long transmission may prevent someone with an emergency from using the repeater","To see if the receiving station operator is still awake"], a:2},
+{s:0, q:"What is the proper way to break into a conversation on a repeater?", o:["Wait for the end of a transmission and start calling the desired party","Shout 'break, break!' to show that you're eager to join the conversation","Turn on an amplifier and override whoever is talking","Say your call sign during a break between transmissions"], a:3},
+{s:0, q:"Administration of the amateur service in Malaysia is by:", o:["Malaysian Amateur Radio Transmitters Society","Malaysian Communications and Multimedia Commission (MCMC)","Jabatan Telekom Malaysia","International Amateur Radio Union"], a:1},
+{s:0, q:"The callsign of an amateur radio Class A licensee whose address is in Sarawak must use the prefix:", o:["9M8","9M3","9M6","9M2"], a:0},
+{s:0, q:"The prime document for the administration of the amateur service in Malaysia is the:", o:["Radio Regulations, 1985","Broadcasting Act","Radio Amateur's Handbook","The Communications and Multimedia Act 1998"], a:3},
+{s:0, q:"Amateur radio repeater frequencies in Malaysia are coordinated by:", o:["The Malaysian Frequency Spectrum Advisory Group","Malaysian Amateur Radio Transmitters Society","Repeater working group committee","Malaysian Communications and Multimedia Commission (MCMC)"], a:1},
+{s:0, q:"The regulatory authority in Malaysia on amateur radio is the:", o:["Malaysian Amateur Radio Transmitters Society","Malaysian Communications and Multimedia Commission (MCMC)","International Amateur Radio Union (IARU)","Putrajaya Administrative"], a:1},
+{s:0, q:"Based on Communications and Multimedia (Spectrum) Regulations 2000, how much is the per year fee for Amateur Radio Repeater Station?", o:["RM 60.00","RM 24.00","RM 36.00","RM 120.00"], a:0},
+{s:0, q:"Regulation 27(1) of the Communications and Multimedia (Technical Standard) Regulation 2000 stated that:", o:["No person shall transmit any part of the frequency spectrum unless that person is licensed","No person shall undertake or conduct any activity in designated skill area unless that person is certified","No person is allowed to operate any Amateur Radio equipment unless the equipment is certified by SIRIM","No person shall undertake or conduct any activity in Amateur Radio Services unless that person is able to operate an amateur radio station correctly"], a:0},
+{s:0, q:"The correct order for callsigns exchange at the start and end of a transmission is:", o:["The other callsign followed by your own Callsign","Your callsign followed by the other callsign","Your own callsign, repeated twice","The other callsign, repeated twice"], a:0},
+{s:0, q:"When conversing via a VHF or UHF repeater you should pause between 'over' to allow for:", o:["Urgent message and emergency traffic","Other stations to join in the QSO","To cool down the repeater","Answer A and B above"], a:3},
+{s:0, q:"When making a CQ call, it is good practice to:", o:["Use a frequency occupied by a weak station","Always use friend callsign","Only call DX stations","Ensure that the frequency is clear before starting"], a:3},
+{s:0, q:"What should you do when you hear two stations are in QSO?", o:["Cut into the conversation without knowing what they are discussing","Listen first and after finding out the gist of the QSO ask to join and start talking about something","Cut in and start an argument about another subject","Listen first and if you can contribute to the QSO ask to join and add what you can to stimulate further discussion"], a:3},
+{s:0, q:"The content recorded on your station logbook shall be preserved for a period of:", o:["At least 6 months","At least 1 year","At least 2 years","Forever"], a:2},
+{s:0, q:"Repeaters normally operate on which mode:", o:["AM","FM","SSB","LSB"], a:1},
+{s:0, q:"What is the best practice when using a repeater?", o:["Keep the 'over' short so as to allow other users to access","Keep the 'over' as long as you like","Discuss subjects including politics, sex and religion","Access the repeater without giving your callsign"], a:0},
+{s:0, q:"Your responsibility as an amateur radio licensee is that you must:", o:["Allow another amateur to operate your station upon request","Be present whenever the station is operated","Be responsible for the proper operation of the station in accordance with the Radio communications Regulations","Notify the Ministry of Communications if another amateur acts as the operator of your station"], a:2},
+{s:0, q:"The abbreviation 'VHF' refers to the radio spectrum between:", o:["2 MHz and 10 MHz","3 MHz and 30 MHz","30 MHz and 300 MHz","200 MHz and 2000 MHz"], a:2},
+{s:0, q:"The signal 'QRM' means:", o:["Your signals are fading","I am troubled by static","Your transmission is being interfered with","Is my transmission being interfered with?"], a:2},
+{s:0, q:"The question 'Who is calling me?' is asked by:", o:["QRT?","QRM?","QRP?","QRZ?"], a:3},
+{s:0, q:"The 'Q' signal 'what is your location?' is:", o:["QTH?","QTC?","QRL?","QRZ?"], a:0},
+{s:0, q:"The 'Q' signal 'are you busy?' is:", o:["QRM?","QRL?","QRT?","QRZ?"], a:1},
+{s:0, q:"The signal 'QSY?' means:", o:["Shall I change to transmission on another frequency?","Shall I increase transmitter power?","Shall I relay to ...?","Is my signal fading?"], a:0},
+{s:0, q:"In the phonetic alphabet, letter Z is:", o:["Zebra","Zulu","Zack","Zero"], a:1},
+{s:0, q:"In the phonetic alphabet, letter Q is:", o:["Quebec","Quality","Qantas","Quack"], a:0},
+{s:0, q:"In the phonetic alphabet, letter R is:", o:["Romeo","Roger","Rocky","Repeat"], a:0},
+{s:0, q:"Readability of R2 indicates:", o:["Perfect readable","Weak; readable every now and then","Unreadable","Readable with difficulty"], a:3},
+{s:0, q:"Signal report which is a perfect signal is:", o:["59","55","45","56"], a:0},
+{s:0, q:"The maximum power output permitted from a Class C amateur station is:", o:["That needed to overcome interference from other stations","25 watt PEP","Specified in the amateur radio General User Radio Licence","1000 watt mean power or 2000 watt PEP"], a:1},
+{s:0, q:"The transmitter power output for Class C amateur stations at all times is:", o:["25 watt PEP maximum output","That needed to overcome interference from other stations","1000 watt PEP maximum","The minimum power necessary to communicate and within the terms of the amateur radio"], a:0},
+{s:0, q:"This callsign could be allocated to an amateur radio operator in Sarawak:", o:["9M8AAA","9M2SL","9M2M","9M0S"], a:0},
+{s:0, q:"These letters are generally used for the first letters in Malaysia amateur radio callsigns:", o:["ZS","9W","VK","LZ"], a:1},
+{s:0, q:"Before re-issuing, a relinquished callsign is normally kept for:", o:["1 year","2 years","0 years","5 years"], a:1},
+{s:0, q:"An amateur radio apparatus assignment authorises the use of:", o:["All land mobile radio transmitting and receiving apparatus","A TV receiver","Amateur radio transmitting apparatus only","Marine mobile equipment"], a:2},
+{s:0, q:"Band plans showing the transmission modes for Malaysia amateur radio bands are developed and published:", o:["To ensure that your operations do not impose problems on other operators and that their operations do not impact on you","To keep experimental developments contained","To reduce the number of modes in any one band","To keep overseas stations separate from local stations"], a:0},
+{s:0, q:"A person in distress:", o:["Must use correct communication procedures","May use any means available to attract attention","Must give position with a grid reference","Must use allocated safety frequencies"], a:1},
+{s:0, q:"This rule applies if two amateur radio stations want to use the same frequency:", o:["The operator with the newer licence must yield the frequency to the more experienced licensee","The station with the lower power output must yield the frequency to the station with the higher power output","Both stations have an equal right to operate on the frequency, the second-comer courteously giving way after checking that the frequency is in use","Stations in ITU Regions 1 and 2 must yield the frequency to stations in Region 3"], a:2},
+{s:0, q:"You are mobile and talking through a VHF repeater. The other station reports that you keep 'dropping out'. This means:", o:["Your signal is drifting lower in frequency","Your signal does not have enough strength to operate the repeater","Your voice is too low-pitched to be understood","You are not speaking loudly enough"], a:1},
+{s:0, q:"A repeater operating with a 'positive 600 kHz split':", o:["Listens on a frequency 600 kHz higher than its designated frequency","Transmits on a frequency 600 kHz higher than its designated frequency","Transmits simultaneously on its designated frequency and one 600 kHz higher","Uses positive modulation with a bandwidth of 600 kHz"], a:1},
+{s:0, q:"A repeater operating with a 'negative 600 kHz split':", o:["Listens on a frequency 600 kHz higher than its designated frequency","Listens on a frequency 600 kHz lower than its designated frequency","Transmits simultaneously on its designated frequency and one 600 kHz higher","Uses positive modulation with a bandwidth of 600 kHz"], a:1},
+{s:0, q:"The standard frequency offset (split) for 70 cm repeaters in Malaysia is plus or minus:", o:["600 kHz","1 MHz","2 MHz","5 MHz"], a:1},
+{s:0, q:"The standard frequency offset (split) for 2m repeaters in Malaysia is plus or minus:", o:["600 kHz","1 MHz","2 MHz","5 MHz"], a:0},
+{s:0, q:"A call over radio involving safety of life is referred to as:", o:["A dire emergency","A distress call","An urgency call","A security call"], a:1},
+{s:0, q:"An urgent situation not involving the safety of life is called:", o:["An emergency call","An urgency call","A high priority call","A sub-distress call"], a:1},
+{s:0, q:"An amateur radio licence authorises the holder to communicate with:", o:["Other amateur radio operators and CB radio operators","Other amateur radio operators only","Any two-way radio services on HF (3-30 MHz)","Land mobile services"], a:1},
+{s:0, q:"When operating on amateur radio bands it is the operator's responsibility to ensure that their transmissions:", o:["Remain completely inside amateur bands","Are at least 3 kHz from the band edges","Are within a distance from the band edges as determined by the MCMC","Are equal to or less than 0 dBm outside the amateur band"], a:0},
+{s:0, q:"Band Plans are published because:", o:["It is a convenient way of remembering the schedule to the amateur licence","It allows the different modes and types of transmission to best share the band","It allocates most of the band to the higher power stations","It is illegal to operate in contravention of the band plan"], a:1},
+{s:0, q:"Calling CQ, another station replies in an offensive manner. You should:", o:["Reply, accepting the contact, as if nothing offensive was said","Advise the station that they will be reported to the police","Complain, on-air, about the offensive station","Ignore the offensive station and make no reference to having heard it"], a:3},
+{s:0, q:"Using the Phonetic Alphabet, the word 'CONTACT' is:", o:["Charlie, Oscar, November, Tango, Alpha, Charlie, Tango","Charlie, Oscar, November, Twin, Alpha, Charlie, Twin","Charlie, Oscar, Norway, Tango, Alpha, Charlie, Tango","Charlie, Ontario, November, Tango, Alpha, Charlie, Tango"], a:0},
+{s:0, q:"Repeaters utilise different transmit and receiver frequencies because:", o:["If they used a single frequency the listener would receive signals both from the sender and the repeater which could cause interference and distortion","If they used a single frequency their transmit would overload their receiver and make it impossible to hear any caller","Users would be unable to check that the repeater was operating correctly by listening on its output frequency","The licence does not allow repeaters to transmit and receive in the same band"], a:1},
+{s:0, q:"To make your call sign better understood when using voice transmissions, what should you do?", o:["Use any words which start with the same letters as your call sign for each letter of your call","Talk louder","Turn up your microphone gain","Use Standard International Phonetics for each letter of your call sign"], a:3},
+{s:0, q:"What can you use as an aid for correct station identification when using phone?", o:["Q signals","The Standard International Phonetic Alphabet","Unique words of your choice","A speech compressor"], a:1},
+{s:0, q:"What is the Standard International Phonetic for the letter P?", o:["Portugal","Papa","Paris","Peter"], a:1},
+{s:0, q:"What is the Standard International Phonetic for the letter I?", o:["Iran","Italy","India","Item"], a:2},
+{s:0, q:"What is the Standard International Phonetic for the letter L?", o:["Love","London","Luxembourg","Lima"], a:3},
+{s:0, q:"What are 'RST' signal reports?", o:["A short way to describe transmitter power","A short way to describe signal reception","A short way to describe sunspot activity","A short way to describe ionospheric conditions"], a:1},
+{s:0, q:"What does 'RST' mean in a signal report?", o:["Recovery, signal strength, tempo","Recovery, signal speed, tone","Readability, signal speed, tempo","Readability, signal strength, tone"], a:3},
+{s:0, q:"What is the meaning of: 'Your signal report is 5 7'?", o:["Your signal is readable with considerable difficulty","Your signal is perfectly readable and moderately strong","Your signal is perfectly readable with near pure tone","Your signal is perfectly readable, but weak"], a:1},
+{s:0, q:"What is the meaning of: 'Your signal report is 3 3'?", o:["Your signal is unreadable, very weak in strength","The station is located at latitude 33 degrees","Your signal is readable with considerable difficulty and weak in strength","The contact is serial number 33"], a:2},
+{s:0, q:"What is used to measure relative signal strength in a receiver?", o:["An SSB meter","A signal deviation meter","An S meter","An RST meter"], a:2},
+{s:0, q:"What is the meaning of 'Your signal report is 1 1'?", o:["Your signal is unreadable, and barely perceptible","Your signal is 11 dB over S9","Your signal is first class in readability and first class in strength","Your signal is very readable and very strong"], a:0},
+{s:0, q:"What is one meaning of the Q signal 'QSY'?", o:["Use more power","Send faster","Change frequency","Send more slowly"], a:2},
+{s:0, q:"What is the meaning of the Q signal 'QSO'?", o:["A contact is ending","Contact is in progress","A conversation is desired","A contact is confirmed"], a:1},
+{s:0, q:"The signal 'QRM' signifies:", o:["I am troubled by static","Your signals are fading","Is my transmission being interfered with","I am being interfered with"], a:3},
+{s:0, q:"The signal 'QRN' means:", o:["I am busy","Are you troubled by static","I am being interfered with","I am troubled by static"], a:3},
+{s:0, q:"'Who is calling me' is denoted by the Q signal:", o:["QRK?","QRP?","QRZ?","QRM?"], a:2},
+{s:0, q:"The 'Q signal' which signifies 'I will call you again' is:", o:["QRX","QRZ","QRS","QRT"], a:0},
+{s:0, q:"The 'Q signal' which signifies 'Nothing from me' is:", o:["QRU","QRZ","QRS","QRT"], a:0},
+{s:0, q:"Which of the following is the highest priority of emergency calls:", o:["Pan Pan","Mayday","Break","CQ"], a:1},
+
+// ─── SECTION 1: Radio & Electromagnetic Theory ──────────────
+{s:1, q:"The name for the flow of electrons in an electric circuit is:", o:["Voltage","Resistance","Capacitance","Current"], a:3},
+{s:1, q:"The watt is the unit of:", o:["Power","Magnetic flux","Electromagnetic field strength","Breakdown voltage"], a:0},
+{s:1, q:"A half wave dipole antenna is normally fed at the point of:", o:["Maximum voltage","Maximum current","Maximum resistance","Resonance"], a:1},
+{s:1, q:"A half-wave antenna is often called a:", o:["Bi-polar","Yagi","Dipole","Beam"], a:2},
+{s:1, q:"The resonant frequency of a dipole antenna is mainly determined by:", o:["Its height above the ground","Its length","The output power of the transmitter used","The length of the transmission line"], a:1},
+{s:1, q:"The resonant frequency of an antenna may be increased by:", o:["Shortening the radiating element","Lengthening the radiating element","Increasing the height of the radiating element","Lowering the radiating element"], a:0},
+{s:1, q:"To lower the resonant frequency of an antenna, the operator should:", o:["Lengthen the antenna","Centre feed the antenna with TV ribbon","Shorten the antenna","Ground one end"], a:0},
+{s:1, q:"A ground plane antenna emits a:", o:["Horizontally polarised wave","Elliptically polarised wave","Axially polarised wave","Vertically polarised wave"], a:3},
+{s:1, q:"A Yagi antenna is said to have a power gain over a dipole antenna because:", o:["It radiates more power than a dipole","More powerful transmitters can use it","It concentrates the radiation in one direction","It can be used for more than one band"], a:2},
+{s:1, q:"The maximum radiation from a three element Yagi antenna is:", o:["In the direction of the reflector end of the boom","In the direction of the director end of the boom","At right angles to the boom","Parallel to the line of the coaxial feeder"], a:1},
+{s:1, q:"The reflector and director(s) in a Yagi antenna are called:", o:["Oscillators","Tuning stubs","Parasitic elements","Matching units"], a:2},
+{s:1, q:"The main reason why many VHF base and mobile antennas are 5/8 of a wavelength long is that:", o:["It is easy to match the antenna to the transmitter","It is a convenient length on VHF","The angle of radiation is high giving excellent local coverage","Most of the energy is radiated at a low angle"], a:3},
+{s:1, q:"A more important consideration when selecting an antenna for working stations at great distances is:", o:["Sunspot activity","Angle of radiation","Impedance","Bandwidth"], a:1},
+{s:1, q:"Radio wave polarisation is defined by the orientation of the radiated:", o:["Magnetic field","Electric field","Inductive field","Capacitive field"], a:1},
+{s:1, q:"You are adjusting an antenna matching unit using an SWR bridge. You should adjust for:", o:["Maximum reflected power","Equal reflected and transmitted power","Minimum reflected power","Minimum transmitted power"], a:2},
+{s:1, q:"The 'squelch' or 'muting' circuitry on a VHF receiver:", o:["Inhibits the audio output unless a station is being received","Compresses incoming voice signals to make them more intelligible","Reduces audio burst noise due to lightning emissions","Reduces the noise on incoming signals"], a:0},
+{s:1, q:"The 'S meter' on a receiver:", o:["Indicates where the squelch control should be set","Indicates the standing wave ratio","Indicates the state of the battery voltage","Indicates relative incoming signal strengths"], a:3},
+{s:1, q:"The purpose of a VOX unit in a transceiver is to:", o:["Change from receiving to transmitting using the sound of the operator's voice","Check the transmitting frequency using the voice operated crystal","Enable a volume operated extension speaker for remote listening","Enable the variable oscillator crystal"], a:0},
+{s:1, q:"'VOX' stands for:", o:["Volume operated extension speaker","Voice operated transmit","Variable oscillator transmitter","Voice operated expander"], a:1},
+{s:1, q:"The term 'PTT' means:", o:["Push To Talk","Piezo-electric Transducer Transmitter","Phase Testing Terminal","Phased Transmission Transponder"], a:0},
+{s:1, q:"The wavelength for a frequency of 146 MHz is:", o:["15 metres","32 metres","4 metres","2 metres"], a:3},
+{s:1, q:"The term 'harmful interference' means:", o:["Interference which obstructs or repeatedly interrupts radiocommunication services","An antenna system which accidentally falls on to a neighbour's property","A receiver with the audio volume unacceptably loud","Interference caused by a station of a secondary service"], a:0},
+{s:1, q:"When interference to the reception of radiocommunications is caused by an amateur station, the station operator:", o:["Must immediately comply with any action required by the MCMC to prevent the interference","May continue to operate with steps taken to reduce the interference when the station operator can afford it","May continue to operate without restrictions","Is not obligated to take any action"], a:0},
+{s:1, q:"When may an amateur radio operator knowingly interfere with another radio communication or signal:", o:["When the operator of another station is acting in an illegal manner","When another station begins transmitting on a frequency you already occupy","Never","When the interference is unavoidable because of crowded band conditions"], a:2},
+{s:1, q:"The 'Q' signal 'shall I decrease transmitter power?' is:", o:["QRP?","QRZ?","QRN?","QRL?"], a:0},
+{s:1, q:"Which of the following are basic SI units of electricity:", o:["mV, volts and amperes","kilovolts, milliamperes and cool-ohms","amperes, volts and ohms","inductance, capacitance and resistance"], a:2},
+{s:1, q:"The acronyms FM and AM as used in radio stand for:", o:["Frequency modulation and Amplitude modulation","Frequency modulation and Analogue modulation","Fremodyne modulation and Amplitude modulation","Fine Modulation (High fidelity) and Angular Modulation"], a:0},
+{s:1, q:"A radio receiver that can pick up weak signals is said to be:", o:["Very broad bandwidth","Very sensitive","Highly selective","A low noise receiver"], a:1},
+{s:1, q:"Which transmission is MOST likely to cause interference?", o:["A high power FM transmission","A low power FM transmission","A high power SSB transmission","A low power SSB transmission"], a:0},
+{s:1, q:"A neighbour complains that your transmissions were causing interference to his television. You should:", o:["Say it's not your fault because you were operating in accordance with your licence","Advise him to inform the local authority","Advise him to contact MCMC","Offer to help by initially checking the times of your transmissions"], a:3},
+{s:1, q:"Immediately before making an initial call an amateur should:", o:["Make an entry in the logbook","Listen on the frequency","Connect the feeder to a dummy load","Check the power supply is switched on"], a:1},
+{s:1, q:"What is the significant difference between AC and DC?", o:["Direct currents are always greater than alternating currents","Direct currents take a long time to change direction","Alternating currents are continually changing direction","Alternating currents have a fixed polarity"], a:2},
+{s:1, q:"Too much audio gain is likely to cause a transmitter to:", o:["Stop working","Increase the SWR","Interfere with other bands","Interfere with adjacent frequencies"], a:3},
+{s:1, q:"Which one of the following would NOT be found in a radio receiver?", o:["RF power amplifier","Audio amplifier","Detector (demodulator)","Tuning and RF amplifier"], a:0},
+{s:1, q:"How much voltage does a standard automobile battery usually supply?", o:["About 240 volts","About 120 volts","About 12 volts","About 9 volts"], a:2},
+{s:1, q:"Which component has a positive and a negative side?", o:["A potentiometer","A fuse","A resistor","A battery"], a:3},
+{s:1, q:"A cell that can be repeatedly recharged by supplying it with electrical energy is known as a:", o:["Low leakage cell","Memory cell","Storage cell","Primary cell"], a:2},
+{s:1, q:"What is the basic unit of electrical power?", o:["The ampere","The volt","The watt","The ohm"], a:2},
+{s:1, q:"Power is expressed in:", o:["Volts","Amperes","Watts","Ohms"], a:2},
+{s:1, q:"Frequency is expressed in:", o:["Newton","Hertz","Ampere","Lambda"], a:1},
+{s:1, q:"Resistance is expressed in:", o:["Ohm","Kelvin","Resistor","Ampere"], a:0},
+{s:1, q:"Wavelength is expressed in:", o:["Lambda","Beta","Alfa","Delta"], a:0},
+
+// ─── SECTION 2: Antenna & Radio Propagation ──────────────────
+{s:2, q:"To obtain efficient transfer of power from a transmitter to an antenna, it is important that there is:", o:["High load impedance","Low load impedance","Correct impedance match between transmitter and antenna","High standing wave ratio"], a:2},
+{s:2, q:"A coaxial feedline is constructed from:", o:["A single conductor","Two parallel conductors separated by spacers","Braid and insulation around a central conductor","Braid and insulation twisted together"], a:2},
+{s:2, q:"A damaged antenna or feedline attached to the output of a transmitter will present an incorrect load resulting in:", o:["The driver stage not delivering power to the final","The output tuned circuit breaking down","Excessive heat being produced in the transmitter output stage","Loss of modulation in the transmitted signal"], a:2},
+{s:2, q:"A result of mismatch between the power amplifier of a transmitter and the antenna is:", o:["Reduced antenna radiation","Radiation of key clicks","Lower modulation percentage","Smaller DC current drain"], a:0},
+{s:2, q:"The following feeder is the best match to the base of a quarter wave ground plane antenna:", o:["300 ohm balanced feedline","50 ohm coaxial cable","75 ohm balanced feedline","300 ohm coaxial cable"], a:1},
+{s:2, q:"The designed output impedance of the antenna socket of most modern transmitters is nominally:", o:["25 ohm","50 ohm","75 ohm","100 ohm"], a:1},
+{s:2, q:"A result of standing waves on a non-resonant transmission line is:", o:["Maximum transfer of energy to the antenna from the transmitter","Perfect impedance match between transmitter and feedline","Reduced transfer of RF energy to the antenna","Lack of radiation from the transmission line"], a:2},
+{s:2, q:"An instrument to check whether RF power in the transmission line is transferred to the antenna is:", o:["A standing wave ratio meter","An antenna tuner","A dummy load","A keying monitor"], a:0},
+{s:2, q:"This commonly available antenna feedline can be buried directly in the ground without adverse effects:", o:["75 ohm twin-lead","300 ohm twin-lead","600 ohm open-wire","Coaxial cable"], a:3},
+{s:2, q:"If an antenna feedline must pass near grounded metal objects, the following type should be used:", o:["75 ohm twin-lead","300 ohm twin-lead","600 ohm open-wire","Coaxial cable"], a:3},
+{s:2, q:"You are adjusting an antenna matching unit using an SWR bridge. You should adjust for:", o:["Maximum reflected power","Equal reflected and transmitted power","Minimum reflected power","Minimum transmitted power"], a:2},
+{s:2, q:"Peak envelope power (PEP) output is the:", o:["Average power output at the crest of the modulating cycle","Total power contained in each sideband","Carrier power output","Transmitter power output on key-up condition"], a:0},
+{s:2, q:"Your apparatus assignment permits you to:", o:["Work citizen band stations","Establish and operate an earth station in the amateur satellite service","Service commercial radio equipment over 1 kW output","Re-wire fixed household electrical supply mains"], a:1},
+{s:2, q:"Losses occurring on a transmission line between a transmitter and antenna result in:", o:["Less RF power being radiated","A SWR of 1:1","Reflections occurring in the line","Improved transfer of RF energy to the antenna"], a:0},
+{s:2, q:"If the characteristic impedance of a feedline does not match the antenna input impedance then:", o:["Standing waves are produced in the feedline","Heat is produced at the junction","The SWR drops to 1:1","The antenna will not radiate any signal"], a:0},
+{s:2, q:"An antenna which transmits equally well in all compass directions is a:", o:["Dipole with a reflector only","Quarter wave grounded vertical","Dipole with director only","Half-wave horizontal dipole"], a:1},
+{s:2, q:"A dummy antenna:", o:["Attenuates a signal generator to a desirable level","Provides more selectivity when a transmitter is being tuned","Matches an AF generator to the receiver","Duplicates the characteristics of an antenna without radiating signals"], a:3},
+{s:2, q:"This property of an antenna broadly defines the range of frequencies to which it will be effective:", o:["Bandwidth","Front-to-back ratio","Impedance","Polarisation"], a:0},
+{s:2, q:"The resonant frequency of an antenna may be increased by:", o:["Shortening the radiating element","Shortening the director element","Increasing the height of the radiating element","Shortening the reflector element"], a:0},
+{s:2, q:"To lower the resonant frequency of an antenna, the operator should:", o:["Lengthen the antenna","Centre feed the antenna with TV ribbon","Shorten the antenna","Ground one end"], a:0},
+{s:2, q:"The main characteristic of a vertical antenna is that it:", o:["Requires few insulators","Is very sensitive to signals coming from horizontal aerials","Receives signals from all points around it equally well","Is easy to feed with TV ribbon feeder"], a:2},
+{s:2, q:"A Yagi antenna has a power gain over a dipole antenna because:", o:["It is more expensive than a dipole","More powerful transmitters can use it","It concentrates the radiation in one direction","It can be used for more than one band"], a:2},
+{s:2, q:"The path radio waves normally follow from a transmitting antenna to a receiving antenna at VHF and higher frequencies is a:", o:["Circular path going north or south from the transmitter","Great circle path","Straight line","Bent path via the ionosphere"], a:2},
+{s:2, q:"An SWR reading of 2.5:1 would indicate:", o:["A satisfactory SWR","That the antenna was not resonant","That the antenna length must be shortened","That the antenna system needs adjustment"], a:3},
+{s:2, q:"The ionosphere is primarily charged by:", o:["Your radio transmissions","Ultraviolet radiation from the sun","Cosmic radiation","Ionospheric storms"], a:1},
+{s:2, q:"The acronym EMC stands for:", o:["Electrical and Magnetic compatibility","Electromagnetic Compatibility","Engineering Minimum Compatibility","Electrical Maintenance Compliance"], a:1},
+{s:2, q:"Amateur radio, TV and Broadcast radio can suffer interference from:", o:["High voltage power lines","The phase of the moon","Ionospheric ducting","Trans-equatorial interference"], a:0},
+{s:2, q:"An antenna is connected via the feeder directly to the transmitter but used on the wrong frequency. This will:", o:["Reflect some of the power from the transmitter back along the feeder","Risk damage to the antenna","Reduce the SWR on the feeder","Increase the signal strength received at a distance from the transmitter"], a:0},
+{s:2, q:"An amateur wishes to achieve a greater range on VHF or UHF. Which option is likely to be most successful?", o:["Increase the antenna height above surrounding roofs","Use a longer feeder to the antenna","Use UHF for greatest range","Move the antenna onto the ground in the garden"], a:0},
+{s:2, q:"The ionosphere is:", o:["Layers of reflective gasses at heights of 70 to 400km","Another name for the air we breathe","A type of spherical transmitting antenna","A piece of amateur radio test equipment"], a:0},
+{s:2, q:"A vertical half wave dipole will radiate:", o:["Equally in all horizontal directions","A maximum signal in a vertical direction","A minimum signal at right-angles to the antenna","A maximum signal off the ends of the antenna"], a:0},
+{s:2, q:"When adjusting an Antenna Matching Unit you should always:", o:["Adjust for a minimum standing wave ratio","Adjust for a maximum standing wave ratio","Turn off the transmitter","Ensure the antenna is cut for the right wavelength"], a:0},
+{s:2, q:"A VHF transmitting antenna should be located:", o:["Indoors, protected from the rain, wind and sun","Outdoors, as high as practicable to avoid obstructions","Close to the transmitter so you can easily adjust it to the correct length","At ground level to minimise interference"], a:1},
+{s:2, q:"Which of the following would NOT help to reduce interference to local TV receivers?", o:["Increasing the distance between the antenna and the houses","Lengthening the transmitter mains cable","Increasing the height of the antenna","Using balanced antennas for HF"], a:1},
+{s:2, q:"Which statement about radio propagation is correct?", o:["At VHF the radio signal can pass through a typical building and the signal strength will not vary much as the receiver is moved around","The signal strength from a transmitter on a hilltop will be the same at 1km, 5km and 10km provided it is in clear sight","Buildings in a town can block VHF radio signals at ground level and better reception will be achieved on a higher floor","If a VHF signal is weak then switching to UHF with the same power and antenna gains is likely to result in a better signal"], a:2},
+{s:2, q:"How many directly driven elements do most Yagi antennas have?", o:["None","Two","Three","One"], a:3},
+{s:2, q:"A dipole transmitting antenna, placed so that the ends are pointing North/South, radiates:", o:["Mostly to the South and North","Mostly to the South","Equally in all directions","Mostly to the East and West"], a:3},
+{s:2, q:"How are VHF signals propagated within the range of the visible horizon?", o:["By direct wave","By sky wave","By plane wave","By geometric wave"], a:0},
+{s:2, q:"A line-of-sight transmission between two stations uses mainly the:", o:["Troposphere","Skip wave","Ionosphere","Ground wave"], a:0},
+{s:2, q:"The distance traveled by ground waves:", o:["Depends on the maximum usable frequency","Is more at higher frequencies","Is less at higher frequencies","Is the same for all frequencies"], a:2},
+{s:2, q:"What connects your transceiver to your antenna?", o:["The power cord","A ground wire","A feed line","A dummy load"], a:2},
+{s:2, q:"The characteristic impedance of a transmission line is determined by the:", o:["Length of the line","Physical dimensions and relative positions of the conductors","Frequency at which the line is operated","Load placed on the line"], a:1},
+{s:2, q:"What commonly available antenna feed line can be buried directly in the ground without adverse effects?", o:["300 ohm twin-lead","600 ohm open-wire","75 ohm twin-lead","Coaxial cable"], a:3},
+{s:2, q:"What is a coaxial cable?", o:["Two wires side-by-side in a plastic ribbon","Two wires side-by-side held apart by insulating rods","Two wires twisted around each other in a spiral","A center wire inside an insulating material which is covered by a metal sleeve or shield"], a:3},
+{s:2, q:"What is parallel-conductor feed line?", o:["Two wires twisted around each other in a spiral","A center wire inside an insulating material which is covered by a metal sleeve or shield","A metal pipe which is as wide or slightly wider than a wavelength of the signal it carries","Two wires side-by-side held apart by insulating rods"], a:3},
+{s:2, q:"What does the term 'balun' mean?", o:["Balanced unloader","Balanced to unbalanced","Balanced un-modulator","Balanced antenna network"], a:1},
+{s:2, q:"What is an unbalanced line?", o:["Feed line with neither conductor connected to ground","Feed line with both conductors connected to ground","Feed line with both conductors connected to each other","Feed line with one conductor connected to ground"], a:3},
+{s:2, q:"A balanced transmission line:", o:["Is made of two parallel wires","Has one conductor inside the other","Carries RF current on one wire only","Is made of one conductor only"], a:0},
+{s:2, q:"What device can be installed to feed a balanced antenna with an unbalanced feed line?", o:["A triaxial transformer","A balun","A wave-trap","A loading coil"], a:1},
+{s:2, q:"What is the best antenna feed line to use if it must be put near grounded metal objects?", o:["Ladder-line","Twisted pair","Coaxial cable","Twin lead"], a:2},
+{s:2, q:"What are some reasons not to use parallel-conductor feed line?", o:["You must use an impedance-matching device with your transceiver, and it does not work very well with a high SWR","It does not work well when tied down to metal objects, and it cannot operate under high power","It does not work well when tied down to metal objects, and you must use an impedance matching device with your transceiver","It is difficult to make at home, and it does not work very well with a high SWR"], a:2},
+{s:2, q:"What does an SWR reading of 1:1 mean?", o:["The best impedance match has been attained","An antenna for another frequency band is probably connected","No power is going to the antenna","The SWR meter is broken"], a:0},
+{s:2, q:"What does an SWR reading of less than 1.5:1 mean?", o:["A fairly good impedance match","An impedance match which is too low","An impedance mismatch; something may be wrong with the antenna system","An antenna gain of 1.5"], a:0},
+{s:2, q:"What kind of SWR reading may mean poor electrical contact between parts of an antenna system?", o:["A negative reading","No reading at all","A jumpy reading","A very low reading"], a:2},
+{s:2, q:"What does a very high SWR reading mean?", o:["The transmitter is putting out more power than normal, showing that it is about to go bad","The antenna is the wrong length, or there may be an open or shorted connection somewhere in the feed line","There is a large amount of solar radiation, which means very poor radio conditions","The signals coming from the antenna are unusually strong, which means very good radio conditions"], a:1},
+{s:2, q:"What does standing-wave ratio mean?", o:["The ratio of maximum to minimum voltages on a feed line","The ratio of maximum to minimum inductances on a feed line","The ratio of maximum to minimum resistances on a feed line","The ratio of maximum to minimum impedances on a feed line"], a:0},
+{s:2, q:"If your antenna feed line gets hot when you are transmitting, what might this mean?", o:["You should transmit using less power","The conductors in the feed line are not insulated very well","The feed line is too long","The SWR may be too high, or the feed line loss may be high"], a:3},
+{s:2, q:"The result of the presence of standing waves on a transmission line is:", o:["Perfect impedance match between transmitter and feedline","Maximum transfer of energy to the antenna from the transmitter","Lack of radiation from the transmission line","Reduced transfer of RF energy to the antenna"], a:3},
+{s:2, q:"What is the main reason why so many VHF base and mobile antennas are 5/8 of a wavelength?", o:["The angle of radiation is high giving excellent local coverage","The angle of radiation is low","It is easy to match the antenna to the transmitter","It's a convenient length on VHF"], a:1},
+{s:2, q:"In a coaxial cable the field:", o:["Round one conductor is the same as the field round the other","Round one conductor is equal and opposite to the field round the other","Exists only between the two conductors and stays inside the cable","Is present round the cable for a distance of about 10 wavelengths"], a:2},
+{s:2, q:"An antenna has a driven element and a reflector. There is probably also a:", o:["Director","Radial","Matching coil","Ground plane"], a:0},
+
+// ─── SECTION 3: Setup & Safety ───────────────────────────────
+{s:3, q:"A residual current device is recommended for protection in a mains power circuit because it:", o:["Reduces electrical interference from the circuit","Removes power to the circuit when the phase and neutral currents are not equal","Removes power to the circuit when the current in the phase wire equals the current in the earth wire","Limits the power provided to the circuit"], a:1},
+{s:3, q:"Wires carrying high voltages in a transmitter should be well insulated to avoid:", o:["Short circuits","Overheating","Over modulation","SWR effects"], a:0},
+{s:3, q:"For your safety, before checking a fault in a mains operated power supply unit, first:", o:["Short the leads of the filter capacitor","Turn off the power and remove the power plug","Check the action of the capacitor bleeder resistance","Remove and check the fuse in the power supply"], a:1},
+{s:3, q:"An earth wire should be connected to the metal chassis of a mains-operated power supply to ensure that if a fault develops, the chassis:", o:["Does not develop a high voltage with respect to earth","Does not develop a high voltage with respect to the phase lead","Becomes a conductor to bleed away static charge","Provides a path to ground in case of lightning strikes"], a:0},
+{s:3, q:"The purpose of using three wires in the mains power cord on amateur radio equipment is to:", o:["Make it inconvenient to use","Prevent the chassis from becoming live in case of an internal short to the chassis","Prevent the plug from being reversed in the wall outlet","Prevent short circuits"], a:1},
+{s:3, q:"The correct colour coding for the phase wire in a flexible mains lead is:", o:["Brown","Blue","Yellow and green","White"], a:0},
+{s:3, q:"The correct colour coding for the neutral wire in a flexible mains lead is:", o:["Brown","Blue","Yellow and green","White"], a:1},
+{s:3, q:"The correct colour coding for the earth wire in a flexible mains lead is:", o:["Brown","Blue","Yellow and/or green","White"], a:2},
+{s:3, q:"The single-phase mains voltage and frequency used in Malaysia is:", o:["240 V 50 Hz","110 V 60 Hz","415 V 50 Hz","Depends on equipment"], a:0},
+{s:3, q:"The following should always be included as a standard protection device in any power supply:", o:["A saturating transformer","A fuse in the mains lead","A zener diode bridge limiter","A fuse in the filter capacitor negative lead"], a:1},
+{s:3, q:"The value of the fuse:", o:["Must correspond to the ampere of the equipment it is protecting","Any suitable size that can fit in the holder","Same as the voltage of the equipment","Same for all radio communication equipment"], a:0},
+{s:3, q:"During a thunderstorm an amateur station should:", o:["Not be operated","Be tuned to the international weather warning frequency","Increase power to overcome lightning static","Provide weather information"], a:0},
+{s:3, q:"Antenna erection and rigging should be carried out:", o:["By persons with the necessary skills and safety equipment","By persons with a Amateur Radio Riggers Certificate II or higher","By persons with a Standard licence or higher","When three or more people are present one of whom must know CPR"], a:0},
+{s:3, q:"Cells and batteries contain chemicals that:", o:["Are the same as those used in capacitors","Give off explosive helium gas when they are charged","Can burn the skin and corrode metals","Make an inexpensive rust inhibitor"], a:2},
+{s:3, q:"Antennas and their fittings should:", o:["Be higher than 5 metres at the lowest point","Be made from non-conductive materials","Be kept well away from power lines","Never cross buildings inhabited by people"], a:2},
+{s:3, q:"Radio waves can be dangerous. This danger increases with:", o:["Frequency, power and proximity","Power only","Power and proximity","The instantaneous human radiation index"], a:0},
+{s:3, q:"What is the most serious risk when working inside equipment that uses high voltages?", o:["Such equipment is more likely to develop a fault","Spare parts are harder to obtain","High voltage equipment is more complicated and harder to repair","There is a risk of receiving a fatal electric shock"], a:3},
+{s:3, q:"You find an amateur friend lying on the floor beside his transmitter. Provided it is safe to do so, you should:", o:["Go for help","Turn him face up","Switch off the power","Pull any microphone and other cables away from him"], a:2},
+{s:3, q:"The mains power switch to the radio shack should be:", o:["Out of reach to younger children for safety reasons","Key operated to prevent use by non-licensed persons","Switched off at all times","In a clearly marked position"], a:3},
+{s:3, q:"The purpose of an RF earth is to:", o:["Pass RF currents safely to earth rather than allowing them to flow into the mains supply","Ensure the operator is protected from excessive voltages should a piece of equipment suffer a failure","Allow a balanced antenna to properly function in a balanced mode without causing interference","Provide a suitable return circuit should a fault develop in the electricity company power supply cables"], a:0},
+{s:3, q:"A friend is found in the club workshop slumped over the repair bench and does not respond. As long as you are sure it is safe, you should first:", o:["Switch off the power to the workshop","Check your friend's pulse at his wrist or neck","Shake him gently in case he is simply asleep","Return to the main room to find a phone"], a:0},
+{s:3, q:"What kind of amateur station automatically retransmits the signals of other stations?", o:["Repeater station","Space station","Telecommand station","Beacon station"], a:0},
+{s:3, q:"What is the main purpose of a repeater?", o:["To link amateur stations with the telephone system","To increase the range of portable and mobile stations","To retransmit weather information during severe storm warnings","To make local information available 24 hours a day"], a:1},
+{s:3, q:"What is the purpose of a repeater time-out timer?", o:["It lets a repeater have a rest period after heavy use","It logs repeater transmit time to predict when a repeater will fail","It tells how long someone has been using a repeater","It limits the amount of time someone can transmit on a repeater"], a:3},
+{s:3, q:"What is a CTCSS (or PL) tone?", o:["A tone used by repeaters to mark the end of a transmission","A sub-audible tone added to a carrier which may cause a receiver to accept a signal","A special signal used for telemetry between amateur space stations and Earth stations","A special signal used for telecommand control of model craft"], a:1},
+{s:3, q:"FM repeater operation on the 2 metre band uses one frequency for transmission and one for reception. The normal difference is:", o:["800 kHz","600 kHz","1000 kHz","400 kHz"], a:1},
+{s:3, q:"What is simplex operation?", o:["Transmitting and receiving over a wide area","Transmitting on one frequency and receiving on another","Transmitting one-way communications","Transmitting and receiving on the same frequency"], a:3},
+{s:3, q:"When should you use simplex operation instead of a repeater?", o:["When a contact is possible without using a repeater","When the most reliable communications are needed","When an emergency telephone call is needed","When you are traveling and need some local information"], a:0},
+{s:3, q:"Why should local amateur communications use VHF and UHF frequencies instead of HF?", o:["To minimize interference on HF bands capable of long-distance communication","Because greater output power is permitted on VHF and UHF","Because HF transmissions are not propagated locally","Because signals are louder on VHF and UHF frequencies"], a:0},
+{s:3, q:"Why should simplex be used where possible, instead of using a repeater?", o:["Your antenna's effectiveness will be better tested","Long distance toll charges will be avoided","The repeater will not be tied up unnecessarily","Signal range will be increased"], a:2},
+{s:3, q:"If you are talking to a station using a repeater, how would you find out if you could communicate using simplex instead?", o:["See if a third station can clearly receive both of you","See if you can clearly receive a more distant repeater","See if you can clearly receive the station on the repeater's input frequency","See if you can clearly receive the station on a lower frequency band"], a:2},
+{s:3, q:"What is the correct way to call 'CQ' when using voice?", o:["Say 'CQ' three times, followed by 'this is,' followed by your call sign spoken three times","Say 'CQ' once, followed by 'this is,' followed by your call sign spoken three times","Say 'CQ' at least five times, followed by 'this is,' followed by your call sign spoken once","Say 'CQ' at least ten times, followed by 'this is,' followed by your call sign spoken once"], a:0},
+{s:3, q:"What should you do before you transmit on any frequency?", o:["Check your antenna for resonance at the selected frequency","Listen to make sure others are not using the frequency","Make sure the SWR on your antenna feed line is high enough","Listen to make sure that someone will be able to hear you"], a:1},
+{s:3, q:"How can on-the-air interference be minimized during a lengthy transmitter testing or loading-up procedure?", o:["Choose an unoccupied frequency","Use a non-resonant antenna","Use a resonant antenna that requires no loading-up procedure","Use a dummy load"], a:3},
+{s:3, q:"Why would you use a dummy antenna?", o:["To give comparative signal reports","To allow antenna tuning without causing interference","It is faster to tune","To reduce output power"], a:1},
+{s:3, q:"What is the meaning of the procedural signal 'CQ'?", o:["Calling any station","Call on the quarter hour","An antenna is being tested","Only the station 'CQ' should answer"], a:0},
+{s:3, q:"What is meant by the term 'DX'?", o:["Calling any station","Distant station","Go ahead","Best regards"], a:1},
+{s:3, q:"What is the meaning of the term '73'?", o:["Long distance","Love and kisses","Go ahead","Best regards"], a:3},
+{s:3, q:"For best protection from electrical shock, what should be grounded in an amateur station?", o:["The antenna feed line","All station equipment","The AC power line","The power supply primary"], a:1},
+{s:3, q:"To protect you against electrical shock, the chassis of each piece of your station equipment should be connected to:", o:["A good ground connection","A dummy load","Insulated shock mounts","The antenna"], a:0},
+{s:3, q:"Which of these materials is best for a ground rod driven into the earth?", o:["Hard plastic","Iron or steel","Fiberglass","Copper-clad steel"], a:3},
+{s:3, q:"If you ground your station equipment to a ground rod driven into the earth, what is the shortest length the rod should be?", o:["1.25 metre (4 ft)","2 metres (6 ft)","3.25 metres (10 ft)","2.5 metres (8 ft)"], a:1},
+{s:3, q:"Where should the green wire in a three-wire AC line cord be connected in a power supply?", o:["To the white wire","To the 'hot' side of the power switch","To the chassis","To the fuse"], a:2},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let selectedSections = [0,1,2,3];
+let quizMode = 'practice'; // 'practice' or 'exam'
+let shuffled = true;
+let quizQuestions = [];
+let currentIdx = 0;
+let answered = false;
+let correct = 0;
+let wrong = 0;
+let wrongQuestions = [];
+let lastConfig = null;
+
+// Count per section
+const secCounts = [0,1,2,3].map(s => QUESTIONS.filter(q => q.s === s).length);
+
+function init() {
+  [0,1,2,3].forEach(s => {
+    document.getElementById(`count-${s}`).textContent = `${secCounts[s]} questions`;
+    document.querySelector(`.section-card[data-sec="${s}"]`).classList.add('selected');
+  });
+  updateTotal();
+}
+
+function toggleSection(s) {
+  const idx = selectedSections.indexOf(s);
+  if (idx >= 0) {
+    if (selectedSections.length === 1) return; // keep at least 1
+    selectedSections.splice(idx, 1);
+  } else {
+    selectedSections.push(s);
+  }
+  document.querySelector(`.section-card[data-sec="${s}"]`).classList.toggle('selected');
+  updateTotal();
+}
+
+function selectMode(m) {
+  quizMode = m;
+  document.querySelectorAll('.option-btn[data-mode]').forEach(b => {
+    b.classList.toggle('selected', b.dataset.mode === m);
+  });
+}
+
+function toggleShuffle() {
+  shuffled = !shuffled;
+  const btn = document.querySelector('.option-btn[data-shuffle]');
+  btn.classList.toggle('selected', shuffled);
+  document.getElementById('shuffle-label').textContent = shuffled ? 'Shuffled' : 'In Order';
+}
+
+function updateTotal() {
+  const total = selectedSections.reduce((acc, s) => acc + secCounts[s], 0);
+  document.getElementById('total-label').textContent = `${total} questions selected`;
+  document.getElementById('btn-start').disabled = total === 0;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  lastConfig = { selectedSections: [...selectedSections], quizMode, shuffled };
+  let pool = QUESTIONS.filter(q => selectedSections.includes(q.s));
+  quizQuestions = shuffled ? shuffle(pool) : pool;
+  currentIdx = 0;
+  correct = 0;
+  wrong = 0;
+  wrongQuestions = [];
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function startQuizAgain() {
+  if (lastConfig) {
+    selectedSections = [...lastConfig.selectedSections];
+    quizMode = lastConfig.quizMode;
+    shuffled = lastConfig.shuffled;
+  }
+  startQuiz();
+}
+
+function retryWrong() {
+  if (wrongQuestions.length === 0) return;
+  quizQuestions = shuffled ? shuffle(wrongQuestions) : [...wrongQuestions];
+  currentIdx = 0;
+  correct = 0;
+  wrong = 0;
+  wrongQuestions = [];
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const total = quizQuestions.length;
+  const q = quizQuestions[currentIdx];
+  const pct = (currentIdx / total) * 100;
+
+  document.getElementById('q-counter').textContent = `Question ${currentIdx + 1} of ${total}`;
+  document.getElementById('q-section-label').textContent = SECTIONS[q.s];
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('live-score').textContent = correct;
+  document.getElementById('q-tag').textContent = SECTION_TAGS[q.s];
+  document.getElementById('q-num').textContent = `Q${currentIdx + 1}`;
+  document.getElementById('q-text').textContent = q.q;
+  
+  const list = document.getElementById('options-list');
+  list.innerHTML = '';
+  const letters = ['A', 'B', 'C', 'D'];
+  q.o.forEach((opt, i) => {
+    const el = document.createElement('div');
+    el.className = 'option-item';
+    el.innerHTML = `<div class="option-letter">${letters[i]}</div><div>${opt}</div>`;
+    el.onclick = () => selectAnswer(i);
+    list.appendChild(el);
+  });
+
+  document.getElementById('feedback-bar').className = 'feedback-bar';
+  document.getElementById('btn-next').disabled = (quizMode === 'practice');
+  answered = false;
+}
+
+function selectAnswer(chosen) {
+  if (answered) return;
+  answered = true;
+  const q = quizQuestions[currentIdx];
+  const items = document.querySelectorAll('.option-item');
+  items.forEach(el => el.classList.add('disabled'));
+
+  const isCorrect = chosen === q.a;
+  if (isCorrect) {
+    correct++;
+    items[chosen].classList.add('correct');
+  } else {
+    wrong++;
+    items[chosen].classList.add('wrong');
+    items[q.a].classList.add('correct');
+    wrongQuestions.push(q);
+  }
+
+  document.getElementById('live-score').textContent = correct;
+
+  if (quizMode === 'practice') {
+    const fb = document.getElementById('feedback-bar');
+    const fbIcon = document.getElementById('feedback-icon');
+    const fbText = document.getElementById('feedback-text');
+    if (isCorrect) {
+      fb.className = 'feedback-bar correct-fb show';
+      fbIcon.textContent = '✓';
+      fbText.textContent = 'Correct!';
+    } else {
+      fb.className = 'feedback-bar wrong-fb show';
+      fbIcon.textContent = '✗';
+      fbText.textContent = `Wrong. Correct answer: ${['A','B','C','D'][q.a]}. ${q.o[q.a]}`;
+    }
+  }
+
+  document.getElementById('btn-next').disabled = false;
+}
+
+function nextQuestion() {
+  if (!answered && quizMode === 'practice') return;
+  currentIdx++;
+  if (currentIdx >= quizQuestions.length) {
+    endQuiz();
+  } else {
+    renderQuestion();
+  }
+}
+
+function endQuiz() {
+  const total = currentIdx; // questions answered so far
+  const totalQ = quizQuestions.length;
+  const pct = totalQ > 0 ? Math.round((correct / totalQ) * 100) : 0;
+  const pass = pct >= 70;
+
+  document.getElementById('result-pct').textContent = pct + '%';
+  document.getElementById('result-pct').className = 'big-score ' + (pass ? 'pass' : 'fail');
+  document.getElementById('result-verdict').textContent = pass ? '✓ PASS' : '✗ FAIL';
+  document.getElementById('result-detail').textContent = `Pass mark: 70% · You answered ${totalQ} questions`;
+
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-total').textContent = totalQ;
+
+  // Review wrong answers
+  const reviewEl = document.getElementById('review-list');
+  if (wrongQuestions.length > 0) {
+    reviewEl.innerHTML = `<div class="review-header">✗ Wrong Answers (${wrongQuestions.length})</div>`;
+    wrongQuestions.forEach((q, i) => {
+      const letters = ['A','B','C','D'];
+      reviewEl.innerHTML += `
+        <div class="review-item">
+          <div class="review-q"><strong>Q:</strong> ${q.q}</div>
+          <div class="review-answers">
+            <div class="review-right">✓ Correct: (${letters[q.a]}) ${q.o[q.a]}</div>
+          </div>
+        </div>`;
+    });
+  } else {
+    reviewEl.innerHTML = '<div style="text-align:center;color:var(--accent);padding:20px;font-family:Syne,sans-serif;font-weight:700;">Perfect score! All correct! 🎉</div>';
+  }
+
+  const retryBtn = document.getElementById('btn-retry-wrong');
+  retryBtn.disabled = wrongQuestions.length === 0;
+
+  showScreen('screen-results');
+}
+
+function showHome() {
+  showScreen('screen-home');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+init();
+</script>
+</body>
+</html>
