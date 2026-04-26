@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEF CON Singapore 2026 — Talks</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c22;
+    --border: #1e2530;
+    --accent: #00ff9d;
+    --accent2: #0096ff;
+    --red: #ff4545;
+    --amber: #ffb830;
+    --green: #00d97e;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --muted2: #9ca3af;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .dc-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--accent);
+    color: #000;
+    padding: 3px 8px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  .venue-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .05em;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -.01em;
+    line-height: 1.2;
+    margin-bottom: .5rem;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted2);
+    font-family: var(--mono);
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: .75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted2);
+    font-family: var(--mono);
+  }
+
+  .day-block { margin-bottom: 3rem; }
+
+  .day-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+
+  .day-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: .6rem 1rem;
+    text-align: left;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  td { padding: .85rem 1rem; vertical-align: top; }
+
+  .col-time {
+    width: 70px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .col-title { }
+
+  .talk-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: .3rem;
+    line-height: 1.4;
+  }
+
+  .talk-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .col-speakers {
+    width: 200px;
+  }
+
+  .speaker-name {
+    font-size: 12px;
+    color: var(--muted2);
+    line-height: 1.5;
+  }
+
+  .speaker-org {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .col-dur {
+    width: 65px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .col-tags { width: 140px; }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-family: var(--mono);
+    font-weight: 600;
+    letter-spacing: .05em;
+    padding: 2px 6px;
+    margin: 2px 2px 2px 0;
+    text-transform: uppercase;
+  }
+
+  .tag-demo { background: rgba(0,150,255,.15); color: #5ab4ff; border: 1px solid rgba(0,150,255,.3); }
+  .tag-tool { background: rgba(0,217,126,.12); color: #00d97e; border: 1px solid rgba(0,217,126,.3); }
+  .tag-exploit { background: rgba(255,69,69,.12); color: #ff7070; border: 1px solid rgba(255,69,69,.3); }
+  .tag-special { background: rgba(255,184,48,.12); color: var(--amber); border: 1px solid rgba(255,184,48,.3); }
+
+  /* Special rows */
+  tr.is-opening td, tr.is-closing td { background: rgba(0,255,157,.03); }
+  tr.is-opening .talk-title, tr.is-closing .talk-title { color: var(--accent); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: .05em;
+  }
+
+  footer a { color: var(--accent2); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 700px) {
+    .col-speakers, .col-dur { display: none; }
+    main { padding: 1rem; }
+    header { padding: 1.5rem 1rem 1rem; }
+    .stats-row { gap: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-row">
+      <span class="dc-badge">DEF CON Singapore</span>
+      <span class="venue-tag">Marina Bay Sands · E 508, Speaking Track 1</span>
+    </div>
+    <h1>Talks Schedule <span>//</span> 2026</h1>
+    <p class="subtitle">April 28 – 30, 2026 &nbsp;·&nbsp; Singapore</p>
+    <div class="stats-row">
+      <div class="stat"><span class="stat-num">20</span><span class="stat-label">Talks</span></div>
+      <div class="stat"><span class="stat-num">3</span><span class="stat-label">Days</span></div>
+      <div class="stat"><span class="stat-num">30+</span><span class="stat-label">Speakers</span></div>
+      <div class="stat"><span class="stat-num">1</span><span class="stat-label">Track</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="legend">
+    <div class="legend-item"><span class="tag tag-demo">Demo</span> Live demonstration</div>
+    <div class="legend-item"><span class="tag tag-exploit">Exploit</span> Exploit released</div>
+    <div class="legend-item"><span class="tag tag-tool">Tool</span> Tool released</div>
+    <div class="legend-item"><span class="tag tag-special">Event</span> Opening / Closing / Panel</div>
+  </div>
+
+  <!-- Tuesday -->
+  <div class="day-block">
+    <div class="day-label">Tuesday · 28 April 2026</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Talk</th>
+          <th>Speaker(s)</th>
+          <th>Dur.</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="is-opening">
+          <td class="col-time">10:00</td>
+          <td class="col-title">
+            <div class="talk-title">Welcome to DEF CON Singapore</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Jeff "The Dark Tangent" Moss</div>
+            <div class="speaker-org">DEF CON Communications</div>
+          </td>
+          <td class="col-dur">—</td>
+          <td class="col-tags"><span class="tag tag-special">Opening</span></td>
+        </tr>
+        <tr class="is-opening">
+          <td class="col-time">10:30</td>
+          <td class="col-title">
+            <div class="talk-title">Welcome to DEF CON Singapore</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Chan Tsan</div>
+          </td>
+          <td class="col-dur">—</td>
+          <td class="col-tags"><span class="tag tag-special">Opening</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">11:00</td>
+          <td class="col-title">
+            <div class="talk-title">Hacking the DC-SG-1 Badge</div>
+            <div class="talk-desc">Hardware hacking deep-dive on the DEF CON Singapore electronic badge — parts, circuits, app features, and badge-to-badge interaction.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Michael Schloh</div>
+            <div class="speaker-org">Monero Devices</div>
+            <div class="speaker-name">Joyce Ng</div>
+            <div class="speaker-org">Hyan Technologies</div>
+            <div class="speaker-name">Dani Weidman</div>
+            <div class="speaker-org">Laser* Tag</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-tool">Tool</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">12:00</td>
+          <td class="col-title">
+            <div class="talk-title">macOS Vulnerability Research: Augmenting Apple's Source Code and OS Logs with AI Agents</div>
+            <div class="talk-desc">Operationalizing Apple's open-source codebase for offensive security via AI-assisted reverse engineering, fuzzing, and vulnerability discovery.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Olivia Gallucci</div>
+            <div class="speaker-org">Datadog</div>
+          </td>
+          <td class="col-dur">30 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">12:30</td>
+          <td class="col-title">
+            <div class="talk-title">The Attack and Defense of AI-Enabled Systems</div>
+            <div class="talk-desc">AI vulnerabilities in UAS/autonomous systems — sensor spoofing, data poisoning, adversarial training, and the NIST AI Risk Management Framework.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Hahna Latonick</div>
+            <div class="speaker-org">Dark Wolf Solutions</div>
+          </td>
+          <td class="col-dur">30 min</td>
+          <td class="col-tags">—</td>
+        </tr>
+        <tr>
+          <td class="col-time">13:00</td>
+          <td class="col-title">
+            <div class="talk-title">Exploiting the Unexpected: A Pwn2Own-Level Break of a Printer</div>
+            <div class="talk-desc">Full exploit chain against a Canon printer earning a Pwn2Own Ireland 2025 win — proprietary protocols, firmware, and enterprise network implications.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">SungJun Park</div>
+            <div class="speaker-name">WonBeen Im</div>
+            <div class="speaker-org">PetoWorks</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:00</td>
+          <td class="col-title">
+            <div class="talk-title">Hotel Lock Vulnerability Demonstration: XOR, Reverse Engineering, Card Decryption and Unauthorized Master Card</div>
+            <div class="talk-desc">Reverse-engineering XOR-based hotel lock encryption (eLock, dLock, Tengo) with Proxmark3 RDV4 — and creating unauthorized master cards.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Dennis Goh Yong Sen</div>
+            <div class="speaker-name">Ambrose Gbormie</div>
+            <div class="speaker-org">RFID Research Group</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">15:00</td>
+          <td class="col-title">
+            <div class="talk-title">Yes We Taught AI to Hack (and It Mostly Works)</div>
+            <div class="talk-desc">A technical field report on what changed in the past 3 years to make AI-driven hacking viable — what works, what fails, and how it fails weirdly.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Ariel Herbert-Voss</div>
+            <div class="speaker-org">RunSybil</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags">—</td>
+        </tr>
+        <tr>
+          <td class="col-time">16:00</td>
+          <td class="col-title">
+            <div class="talk-title">Breaking and Fixing the OCPP Electric Vehicle Charging Standard with CheckOCPP and EmuOCPP</div>
+            <div class="talk-desc">Security/privacy analysis of OCPP (1.6, 2.0, 2.0.1) — 8 vulnerabilities found including 5 new, with attacks on real charging stations and a production network.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Victor Fresno Gómez</div>
+            <div class="speaker-name">Daniele Antonioli</div>
+            <div class="speaker-org">EURECOM</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-tool">Tool</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">17:00</td>
+          <td class="col-title">
+            <div class="talk-title">Singapore Hackers: Building a Community, Shaping an Ecosystem</div>
+            <div class="talk-desc">Panel tracing Singapore's cybersecurity community from small gatherings to national programmes — and where it goes next as DEF CON arrives.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Emil Tan</div>
+            <div class="speaker-org">Division Zero (Div0)</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-special">Panel</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Wednesday -->
+  <div class="day-block">
+    <div class="day-label">Wednesday · 29 April 2026</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Talk</th>
+          <th>Speaker(s)</th>
+          <th>Dur.</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-time">10:30</td>
+          <td class="col-title">
+            <div class="talk-title">You Snooze You Lose: Winning LPEs by Racing Services for RPC Endpoints</div>
+            <div class="talk-desc">Unprivileged users impersonating built-in RPC servers — two CVEs, privilege escalation from low to medium, and the RPC-Racer toolset.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Ron Ben Yizhak</div>
+            <div class="speaker-org">SafeBreach</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span><span class="tag tag-tool">Tool</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">11:30</td>
+          <td class="col-title">
+            <div class="talk-title">Your Credentials Are Still Mine: Extracting Credentials from Latest Browsers</div>
+            <div class="talk-desc">Bypassing Chrome App-Bound Encryption and Firefox 144+ AES-256 credential protection — full automated recovery with standard user privileges, no kernel exploits.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">He Li</div>
+            <div class="speaker-name">Liyong Wang</div>
+          </td>
+          <td class="col-dur">30 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">12:00</td>
+          <td class="col-title">
+            <div class="talk-title">Surveilling Politicians, Unmasking Influencers, Fake Likes and Dying Together</div>
+            <div class="talk-desc">Art-meets-hacking: real-time CV on parliament livestreams, CCTV-to-Instagram matching, and a live demo manufacturing fake social media likes.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Dries Depoorter</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">13:00</td>
+          <td class="col-title">
+            <div class="talk-title">The Month of AI Bugs: Lessons Learned Exploiting AI Computer-Use and Coding Agents</div>
+            <div class="talk-desc">August 2025 vuln disclosure across Claude Code, GitHub Copilot, Devin, ChatGPT Operator, Amazon Q and others — RCE, exfiltration, ZombAIs, AI ClickFix.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Johann Rehberger</div>
+            <div class="speaker-org">Independent</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:00</td>
+          <td class="col-title">
+            <div class="talk-title">Confused Recovery: A New Attack Class on Windows Recovery</div>
+            <div class="talk-desc">4 new WinRE vulnerabilities enabling volume confusion — 2 exploitation techniques leading to full BitLocker bypass and extraction of BitLocker secrets.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Alon Leviev</div>
+            <div class="speaker-org">Microsoft</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">15:00</td>
+          <td class="col-title">
+            <div class="talk-title">Finding a Generic Mali GPU Read/Write Primitive for Real-World Exploit Development</div>
+            <div class="talk-desc">Mali-RWP: first stable, library-independent R/W primitive for modern CSF-based Mali GPUs — replacing obsolete Job Manager and OpenCL-based approaches.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Shuquan Zhou</div>
+            <div class="speaker-name">Guang Gong</div>
+            <div class="speaker-name">Jun Yao</div>
+            <div class="speaker-org">360 Vulnerability Research Institute</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">16:00</td>
+          <td class="col-title">
+            <div class="talk-title">Turning Spam Filters Into Your Greatest Enemy: Intrusions Via RCEs in Email Spam Filters</div>
+            <div class="talk-desc">Real-world APT intrusions into Taiwanese critical orgs via 0-day/N-day email spam filter exploits — command injection, shellcode injection, kernel module backdoors.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Ting-Wei Hsieh</div>
+            <div class="speaker-name">Kai-Ching Wang</div>
+            <div class="speaker-org">CHT Security</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">17:00</td>
+          <td class="col-title">
+            <div class="talk-title">Impersonate Me: Misconfigurations in Entra ID and Identity Libraries Leading to Privilege Escalation</div>
+            <div class="talk-desc">Mutable OIDC display claims (email, preferred_username) enabling cross-tenant impersonation + .NET token signature bypass — includes DVOE lab environment.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Nikhil Sahoo</div>
+            <div class="speaker-org">Microsoft</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-tool">Tool</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Thursday -->
+  <div class="day-block">
+    <div class="day-label">Thursday · 30 April 2026</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Talk</th>
+          <th>Speaker(s)</th>
+          <th>Dur.</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-time">10:30</td>
+          <td class="col-title">
+            <div class="talk-title">Breaking the Backbone of Global ISP Networks</div>
+            <div class="talk-desc">Pre-auth RCE chain on GPON OLT pivoting into ISP cloud fleet management — mass surveillance, traffic interception, persistent control of access network infrastructure.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Mathieu Farrell</div>
+            <div class="speaker-org">Quarkslab</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">11:30</td>
+          <td class="col-title">
+            <div class="talk-title">Beyond Prompt Injection: Agentic AI Attacks in the Real World</div>
+            <div class="talk-desc">History of ChatGPT and agentic surface area attacks — how the mental model for mitigation has evolved, and an ideology for reasoning about LLM system flaws.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Adrian Spânu</div>
+            <div class="speaker-name">Thomas Shadwell</div>
+            <div class="speaker-org">OpenAI</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags">—</td>
+        </tr>
+        <tr>
+          <td class="col-time">12:30</td>
+          <td class="col-title">
+            <div class="talk-title">PackageGate: Finding 0-days in Every JS Package Manager</div>
+            <div class="talk-desc">7 zero-days across npm, yarn, pnpm, Bun, and vlt — RCE during install with --ignore-scripts enabled, lockfile integrity bypass serving targeted payloads.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Oren Yomtov</div>
+            <div class="speaker-name">Idan Dardikman</div>
+            <div class="speaker-org">Koi</div>
+          </td>
+          <td class="col-dur">30 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">13:00</td>
+          <td class="col-title">
+            <div class="talk-title">It's *still* DNS</div>
+            <div class="talk-desc">20+ years on from Kaminsky — edge cases in stub resolvers, DNS-over-HTTPS, and client-side components that still lead to surprising interactions.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">David Leadbeater</div>
+            <div class="speaker-org">G-Research</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:00</td>
+          <td class="col-title">
+            <div class="talk-title">Copirate 365: Persistent Plundering in the Depths of Microsoft Copilot</div>
+            <div class="talk-desc">First memory-persistent data-exfiltration attack on M365 Copilot — backdooring long-term storage, Delayed Tool Invocation bypass, and the Normalization of Deviance in AI.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Johann Rehberger</div>
+            <div class="speaker-org">Independent</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr>
+          <td class="col-time">15:00</td>
+          <td class="col-title">
+            <div class="talk-title">Smuggling Identities: Abusing MIME Header Parsing Across Major Email Providers</div>
+            <div class="talk-desc">RFC 5322 From header parsing inconsistencies enabling provider-agnostic email spoofing at scale — bypasses SPF/DKIM/DMARC across Gmail, Outlook, iCloud, Fastmail, Proton.</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Hao Wang</div>
+            <div class="speaker-name">Caleb Sargent</div>
+            <div class="speaker-org">PayPal</div>
+          </td>
+          <td class="col-dur">60 min</td>
+          <td class="col-tags"><span class="tag tag-demo">Demo</span><span class="tag tag-exploit">Exploit</span></td>
+        </tr>
+        <tr class="is-closing">
+          <td class="col-time">16:00</td>
+          <td class="col-title">
+            <div class="talk-title">Closing Ceremonies</div>
+          </td>
+          <td class="col-speakers">
+            <div class="speaker-name">Jeff "The Dark Tangent" Moss</div>
+            <div class="speaker-org">DEF CON Communications</div>
+          </td>
+          <td class="col-dur">90 min</td>
+          <td class="col-tags"><span class="tag tag-special">Closing</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>
+  Source: <a href="https://defcon.org/html/defcon-singapore/dc-singapore-talks.html" target="_blank">defcon.org/html/defcon-singapore/dc-singapore-talks.html</a>
+  &nbsp;·&nbsp; All talks at E 508, Speaking Track 1, Marina Bay Sands
+</footer>
+
+</body>
+</html>
