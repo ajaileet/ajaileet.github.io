@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux find — Cheat Sheet</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='26' cy='26' r='16' fill='none' stroke='%235c4a2a' stroke-width='6'/><line x1='37' y1='37' x2='56' y2='56' stroke='%235c4a2a' stroke-width='6' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Source+Code+Pro:wght@400;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:      #f5f0e8;
+  --cream-dark: #ede6d6;
+  --cream-deep: #e2d9c5;
+  --parchment:  #d4c9b0;
+  --ink:        #2e2416;
+  --ink-mid:    #5c4a2a;
+  --ink-light:  #8a7055;
+  --rust:       #a0522d;
+  --rust-light: #c8865a;
+  --sage:       #5a7a5a;
+  --navy:       #2a3d5c;
+  --gold:       #b8860b;
+  --terminal:   #141008;
+  --term-green: #68d391;
+  --term-yellow:#f6e05e;
+  --term-blue:  #63b3ed;
+  --term-red:   #fc8181;
+  --term-purple:#b794f4;
+  --term-muted: #718096;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  background-color: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(90,70,40,0.03) 28px, rgba(90,70,40,0.03) 29px);
+  pointer-events: none;
+  z-index: 0;
+}
+.page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 40px 32px 80px; }
+
+/* HEADER */
+header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-bottom: 2px solid var(--parchment); padding-bottom: 20px; margin-bottom: 36px;
+  flex-wrap: wrap; gap: 16px;
+}
+.header-left { display: flex; align-items: center; gap: 18px; }
+.logo-icon {
+  width: 52px; height: 52px; background: var(--ink); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.logo-icon svg { width: 28px; height: 28px; }
+h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; font-weight: 600; color: var(--ink); letter-spacing: -0.02em; line-height: 1; }
+h1 span { color: var(--rust); }
+.subtitle { font-size: 0.8rem; color: var(--ink-light); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
+.header-meta { font-size: 0.78rem; color: var(--ink-light); text-align: right; line-height: 1.8; }
+
+/* NAV TABS */
+.tabs { display: flex; gap: 4px; margin-bottom: 28px; border-bottom: 1.5px solid var(--parchment); }
+.tab-btn {
+  font-family: 'Lato', sans-serif; font-size: 0.82rem; font-weight: 400;
+  padding: 8px 18px; border: none; background: transparent; color: var(--ink-light);
+  cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px;
+  transition: color 0.15s, border-color 0.15s; letter-spacing: 0.05em;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── BUILDER PANEL ── */
+.builder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.b-card {
+  background: var(--cream-dark);
+  border: 1px solid var(--parchment);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.b-label {
+  font-size: 0.7rem; font-weight: 400; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ink-light); margin-bottom: 6px;
+}
+.b-card select, .b-card input[type="text"], .b-card input[type="number"] {
+  width: 100%; font-family: 'Source Code Pro', monospace; font-size: 0.82rem;
+  padding: 6px 9px; border-radius: 6px; border: 1px solid var(--parchment);
+  background: var(--cream); color: var(--ink); outline: none;
+  transition: border-color 0.15s;
+}
+.b-card select:focus, .b-card input:focus { border-color: var(--rust); }
+.b-card .row2 { display: flex; gap: 6px; }
+.b-card .row2 select, .b-card .row2 input { flex: 1; }
+
+.toggle-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tog {
+  font-family: 'Source Code Pro', monospace; font-size: 0.75rem;
+  padding: 3px 10px; border-radius: 99px;
+  border: 1px solid var(--parchment); background: var(--cream);
+  color: var(--ink-light); cursor: pointer; user-select: none; transition: all 0.12s;
+}
+.tog.on { background: var(--ink); border-color: var(--ink); color: var(--cream); }
+
+/* PRESETS */
+.preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.preset-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-light); align-self: center; margin-right: 4px; }
+.preset-btn {
+  font-family: 'Source Code Pro', monospace; font-size: 0.77rem;
+  padding: 5px 13px; border-radius: 99px;
+  border: 1px solid var(--parchment); background: var(--cream-dark);
+  color: var(--ink-mid); cursor: pointer; transition: all 0.12s;
+}
+.preset-btn:hover { border-color: var(--rust); color: var(--rust); background: var(--cream); }
+
+/* OUTPUT */
+.output-box {
+  background: var(--terminal);
+  border-radius: 10px;
+  padding: 0;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.output-titlebar {
+  background: #1e160a;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.dot-r { width:11px;height:11px;border-radius:50%;background:#fc5c65; }
+.dot-y { width:11px;height:11px;border-radius:50%;background:#fed330; }
+.dot-g { width:11px;height:11px;border-radius:50%;background:#26de81; }
+.tbar-label { font-family:'Source Code Pro',monospace; font-size:0.72rem; color:#5a4a3a; margin-left:6px; }
+.output-body { padding: 16px 20px; }
+.output-prompt { font-family:'Source Code Pro',monospace; font-size:0.8rem; color:var(--term-muted); margin-bottom:8px; }
+#cmd-display {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.88rem;
+  color: #e2d9c5;
+  line-height: 1.8;
+  word-break: break-all;
+  min-height: 36px;
+}
+.c-base   { color: var(--term-blue); font-weight: 600; }
+.c-path   { color: var(--term-yellow); }
+.c-flag   { color: var(--term-green); }
+.c-val    { color: var(--term-red); }
+.c-act    { color: var(--term-purple); }
+
+.output-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+.action-btn {
+  font-family:'Lato',sans-serif; font-size:0.78rem; font-weight:400;
+  padding:6px 16px; border-radius:6px; cursor:pointer; transition:all 0.15s;
+}
+.btn-copy { background:transparent; border:1px solid var(--parchment); color:var(--ink-mid); }
+.btn-copy:hover { background:var(--cream-deep); color:var(--ink); }
+.btn-reset { background:transparent; border:1px solid var(--parchment); color:var(--ink-light); }
+.btn-reset:hover { border-color:var(--rust); color:var(--rust); }
+
+/* SEARCH */
+.search-wrap { position:relative; margin-bottom:28px; }
+.search-wrap svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; stroke:var(--ink-light); fill:none; stroke-width:2; stroke-linecap:round; }
+#search {
+  width:100%; padding:10px 14px 10px 40px; font-family:'Lato',sans-serif; font-size:0.88rem;
+  font-weight:300; background:var(--cream-dark); border:1.5px solid var(--parchment);
+  border-radius:8px; color:var(--ink); outline:none; transition:border-color 0.2s;
+}
+#search:focus { border-color:var(--ink-mid); background:var(--cream); }
+#search::placeholder { color:var(--ink-light); }
+
+/* SECTION */
+.section { margin-bottom: 34px; animation: fadeUp 0.4s ease both; }
+.section:nth-child(1){animation-delay:.05s}.section:nth-child(2){animation-delay:.10s}
+.section:nth-child(3){animation-delay:.15s}.section:nth-child(4){animation-delay:.20s}
+.section:nth-child(5){animation-delay:.25s}.section:nth-child(6){animation-delay:.30s}
+.section:nth-child(7){animation-delay:.35s}.section:nth-child(8){animation-delay:.40s}
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+.section-title {
+  font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; color:var(--ink);
+  margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--cream-deep);
+  display:flex; align-items:center; gap:8px;
+}
+.dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.dot-rust{background:var(--rust)} .dot-sage{background:var(--sage)} .dot-navy{background:var(--navy)} .dot-gold{background:var(--gold)} .dot-ink{background:var(--ink-light)}
+
+/* TABLE */
+.tbl-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+thead tr { background:var(--cream-deep); }
+th { font-family:'Lato',sans-serif; font-weight:400; font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-light); padding:8px 13px; text-align:left; border-bottom:1px solid var(--parchment); }
+td { padding:7px 13px; border-bottom:1px solid rgba(180,160,120,0.2); vertical-align:top; color:var(--ink); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(180,160,120,0.1); }
+.hidden-row { display:none; }
+
+code {
+  font-family:'Source Code Pro',monospace; font-size:0.8rem;
+  background:var(--cream-deep); border:1px solid var(--parchment);
+  padding:1px 6px; border-radius:4px; color:var(--rust); white-space:nowrap;
+}
+.tag { display:inline-block; font-size:0.67rem; font-weight:400; letter-spacing:0.06em; text-transform:uppercase; padding:2px 7px; border-radius:99px; margin-left:4px; vertical-align:middle; }
+.tag-danger { background:#f5e8e8; color:#8b2020; border:1px solid #e8c8c8; }
+.tag-info   { background:#e8eef5; color:#1a3d5c; border:1px solid #c8d8e8; }
+
+.col2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media(max-width:720px){.col2{grid-template-columns:1fr}}
+
+/* EXAMPLES */
+.examples { display:flex; flex-direction:column; gap:10px; }
+.ex-card {
+  background:var(--cream-dark); border:1px solid var(--parchment);
+  border-left:3px solid var(--rust); border-radius:6px; padding:10px 14px;
+  transition:border-left-color 0.15s;
+}
+.ex-card:hover { border-left-color:var(--gold); }
+.ex-lbl { font-size:0.71rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink-light); margin-bottom:4px; }
+.ex-cmd { font-family:'Source Code Pro',monospace; font-size:0.82rem; color:var(--ink); word-break:break-all; line-height:1.6; }
+.ex-cmd .c-find{color:var(--navy);font-weight:600} .ex-cmd .c-path{color:var(--rust)} .ex-cmd .c-flag{color:var(--sage)} .ex-cmd .c-val{color:var(--gold)} .ex-cmd .c-act{color:var(--navy)}
+.ex-desc { font-size:0.77rem; color:var(--ink-light); margin-top:5px; line-height:1.5; }
+.ex-copy { float:right; font-size:0.68rem; font-family:'Lato',sans-serif; padding:2px 9px; background:transparent; border:1px solid var(--parchment); border-radius:4px; color:var(--ink-light); cursor:pointer; transition:all 0.15s; margin-left:8px; }
+.ex-copy:hover { background:var(--cream-deep); color:var(--ink); }
+
+/* PATTERNS */
+.patterns { display:flex; flex-wrap:wrap; gap:8px; }
+.pattern-pill {
+  font-family:'Source Code Pro',monospace; font-size:0.78rem;
+  background:var(--cream-dark); border:1px solid var(--parchment);
+  border-radius:6px; padding:5px 12px; color:var(--ink);
+  display:flex; align-items:center; gap:8px;
+}
+.pill-desc { font-family:'Lato',sans-serif; font-size:0.7rem; color:var(--ink-light); }
+
+footer {
+  margin-top:60px; border-top:1px solid var(--parchment); padding-top:16px;
+  font-size:0.75rem; color:var(--ink-light); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+}
+kbd { font-family:'Source Code Pro',monospace; font-size:0.72rem; background:var(--cream-deep); border:1px solid var(--parchment); padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="logo-icon">
+      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="8" stroke="#f5f0e8" stroke-width="2.5"/>
+        <line x1="18" y1="18" x2="26" y2="26" stroke="#f5f0e8" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <h1>linux <span>find</span></h1>
+      <div class="subtitle">command cheat sheet &amp; builder</div>
+    </div>
+  </div>
+  <div class="header-meta">GNU findutils<br>4jai.net · 2025</div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('builder', this)">⚒ Command Builder</button>
+  <button class="tab-btn" onclick="switchTab('reference', this)">📖 Reference</button>
+  <button class="tab-btn" onclick="switchTab('examples', this)">💡 Examples</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TAB 1: BUILDER
+═══════════════════════════════════════════════ -->
+<div id="tab-builder" class="tab-panel active">
+
+  <div class="preset-row">
+    <span class="preset-label">presets →</span>
+    <button class="preset-btn" onclick="applyPreset('suid')">SUID hunt</button>
+    <button class="preset-btn" onclick="applyPreset('worldwrite')">world-writable</button>
+    <button class="preset-btn" onclick="applyPreset('recent')">recently modified</button>
+    <button class="preset-btn" onclick="applyPreset('largefiles')">large files</button>
+    <button class="preset-btn" onclick="applyPreset('emptydir')">empty dirs</button>
+    <button class="preset-btn" onclick="applyPreset('logs')">log files</button>
+    <button class="preset-btn" onclick="applyPreset('hidden')">hidden files</button>
+    <button class="preset-btn" onclick="applyPreset('py')">python scripts</button>
+    <button class="preset-btn" onclick="applyPreset('owned')">by user</button>
+    <button class="preset-btn" onclick="applyPreset('execs')">executables</button>
+    <button class="preset-btn" onclick="applyPreset('orphan')">orphaned files</button>
+    <button class="preset-btn" onclick="applyPreset('keys')">private keys</button>
+  </div>
+
+  <div class="builder-grid">
+
+    <!-- Path -->
+    <div class="b-card">
+      <div class="b-label">Search Path</div>
+      <input type="text" id="b-path" value="." placeholder="/path/to/search" oninput="build()">
+    </div>
+
+    <!-- File Type -->
+    <div class="b-card">
+      <div class="b-label">File Type (-type)</div>
+      <select id="b-type" onchange="build()">
+        <option value="">any</option>
+        <option value="f">f — regular file</option>
+        <option value="d">d — directory</option>
+        <option value="l">l — symlink</option>
+        <option value="b">b — block device</option>
+        <option value="c">c — char device</option>
+        <option value="p">p — named pipe</option>
+        <option value="s">s — socket</option>
+      </select>
+    </div>
+
+    <!-- Name -->
+    <div class="b-card">
+      <div class="b-label">Name / Pattern</div>
+      <input type="text" id="b-name" placeholder='e.g. *.log' oninput="build()" style="margin-bottom:7px">
+      <div class="toggle-row">
+        <span class="tog" id="tog-iname" onclick="toggleOpt('iname')">-iname</span>
+        <span class="tog" id="tog-not" onclick="toggleOpt('not')">! NOT</span>
+      </div>
+    </div>
+
+    <!-- Max Depth -->
+    <div class="b-card">
+      <div class="b-label">Depth</div>
+      <select id="b-maxdepth" onchange="build()" style="margin-bottom:7px">
+        <option value="">unlimited</option>
+        <option value="1">maxdepth 1 — current dir</option>
+        <option value="2">maxdepth 2</option>
+        <option value="3">maxdepth 3</option>
+        <option value="4">maxdepth 4</option>
+        <option value="5">maxdepth 5</option>
+      </select>
+      <select id="b-mindepth" onchange="build()">
+        <option value="">mindepth — any</option>
+        <option value="1">mindepth 1 (skip root)</option>
+        <option value="2">mindepth 2</option>
+      </select>
+    </div>
+
+    <!-- Modified Time -->
+    <div class="b-card">
+      <div class="b-label">Modified Time</div>
+      <div class="row2" style="margin-bottom:7px">
+        <select id="b-mtime-op" onchange="build()">
+          <option value="">— mtime</option>
+          <option value="-">within N days</option>
+          <option value="+">older than N days</option>
+        </select>
+        <input type="number" id="b-mtime-val" placeholder="N" min="0" oninput="build()">
+      </div>
+      <div class="row2">
+        <select id="b-mmin-op" onchange="build()">
+          <option value="">— mmin</option>
+          <option value="-">within N mins</option>
+          <option value="+">older N mins</option>
+        </select>
+        <input type="number" id="b-mmin-val" placeholder="N" min="0" oninput="build()">
+      </div>
+    </div>
+
+    <!-- Size -->
+    <div class="b-card">
+      <div class="b-label">File Size</div>
+      <div class="row2">
+        <select id="b-size-op" onchange="build()">
+          <option value="">— size</option>
+          <option value="+">greater than</option>
+          <option value="-">less than</option>
+        </select>
+        <input type="number" id="b-size-val" placeholder="N" min="0" oninput="build()">
+        <select id="b-size-unit" onchange="build()" style="max-width:60px">
+          <option value="k">KB</option>
+          <option value="M">MB</option>
+          <option value="G">GB</option>
+          <option value="c">B</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Permissions -->
+    <div class="b-card">
+      <div class="b-label">Permissions (-perm)</div>
+      <select id="b-perm" onchange="permChange()">
+        <option value="">any</option>
+        <option value="/4000">SUID (/4000)</option>
+        <option value="/2000">SGID (/2000)</option>
+        <option value="/6000">SUID + SGID</option>
+        <option value="/o+w">world-writable (/o+w)</option>
+        <option value="777">exactly 777</option>
+        <option value="-644">at least 644</option>
+        <option value="-u+x">user executable</option>
+        <option value="custom">custom…</option>
+      </select>
+      <input type="text" id="b-perm-custom" placeholder="e.g. -perm 755" style="display:none;margin-top:7px" oninput="build()">
+    </div>
+
+    <!-- Owner -->
+    <div class="b-card">
+      <div class="b-label">Owner / Group</div>
+      <input type="text" id="b-user" placeholder="-user e.g. root" oninput="build()" style="margin-bottom:7px">
+      <input type="text" id="b-group" placeholder="-group e.g. www-data" oninput="build()">
+    </div>
+
+    <!-- Extra Flags -->
+    <div class="b-card">
+      <div class="b-label">Extra Flags</div>
+      <div class="toggle-row">
+        <span class="tog" id="tog-empty" onclick="toggleOpt('empty')">-empty</span>
+        <span class="tog" id="tog-executable" onclick="toggleOpt('executable')">-executable</span>
+        <span class="tog" id="tog-readable" onclick="toggleOpt('readable')">-readable</span>
+        <span class="tog" id="tog-writable" onclick="toggleOpt('writable')">-writable</span>
+        <span class="tog" id="tog-nouser" onclick="toggleOpt('nouser')">-nouser</span>
+        <span class="tog" id="tog-nogroup" onclick="toggleOpt('nogroup')">-nogroup</span>
+        <span class="tog" id="tog-xdev" onclick="toggleOpt('xdev')">-xdev</span>
+        <span class="tog" id="tog-follow" onclick="toggleOpt('follow')">-follow</span>
+      </div>
+    </div>
+
+    <!-- Action -->
+    <div class="b-card">
+      <div class="b-label">Action</div>
+      <select id="b-action" onchange="actionChange()">
+        <option value="">-print (default)</option>
+        <option value="-ls">-ls (detailed list)</option>
+        <option value="-delete">-delete ⚠</option>
+        <option value="-exec_semi">-exec cmd {} \;</option>
+        <option value="-exec_plus">-exec cmd {} +</option>
+        <option value="-execdir">-execdir cmd {} \;</option>
+        <option value="-ok">-ok cmd {} \;</option>
+        <option value="-print0">-print0 (null sep)</option>
+        <option value="-printf">-printf "fmt"</option>
+        <option value="-quit">-quit (first match)</option>
+      </select>
+      <input type="text" id="b-exec-cmd" placeholder="e.g. chmod 644" style="display:none;margin-top:7px" oninput="build()">
+      <input type="text" id="b-printf-fmt" placeholder='e.g. "%p %s\n"' style="display:none;margin-top:7px" oninput="build()">
+    </div>
+
+    <!-- Pipe / Redirect -->
+    <div class="b-card">
+      <div class="b-label">Pipe / Redirect</div>
+      <select id="b-pipe" onchange="pipeChange()">
+        <option value="">none</option>
+        <option value="| xargs ls -lh">| xargs ls -lh</option>
+        <option value="| xargs rm -f">| xargs rm -f</option>
+        <option value="| xargs grep -l">| xargs grep -l</option>
+        <option value="| xargs chmod 644">| xargs chmod 644</option>
+        <option value="| sort">| sort</option>
+        <option value="| sort -rh">| sort -rh</option>
+        <option value="| wc -l">| wc -l</option>
+        <option value="| head -20">| head -20</option>
+        <option value="> output.txt">> output.txt</option>
+        <option value="2>/dev/null">2>/dev/null</option>
+        <option value="2>/dev/null | sort">2>/dev/null | sort</option>
+        <option value="custom">custom…</option>
+      </select>
+      <input type="text" id="b-pipe-custom" placeholder="| your command" style="display:none;margin-top:7px" oninput="build()">
+    </div>
+
+    <!-- Newer Than -->
+    <div class="b-card">
+      <div class="b-label">Newer Than (date)</div>
+      <input type="date" id="b-newer-date" onchange="build()" style="width:100%;font-family:'Source Code Pro',monospace;font-size:0.82rem;padding:6px 9px;border-radius:6px;border:1px solid var(--parchment);background:var(--cream);color:var(--ink);outline:none;">
+      <div style="font-size:0.7rem;color:var(--ink-light);margin-top:5px;">uses -newermt "YYYY-MM-DD"</div>
+    </div>
+
+  </div>
+
+  <!-- OUTPUT -->
+  <div class="output-box">
+    <div class="output-titlebar">
+      <span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span>
+      <span class="tbar-label">bash — generated command</span>
+    </div>
+    <div class="output-body">
+      <div class="output-prompt">$</div>
+      <div id="cmd-display"></div>
+    </div>
+  </div>
+  <div class="output-actions">
+    <button class="action-btn btn-reset" onclick="resetAll()">↺ reset</button>
+    <button class="action-btn btn-copy" onclick="copyCmd()">⎘ copy command</button>
+  </div>
+
+</div><!-- /tab-builder -->
+
+<!-- ═══════════════════════════════════════════════
+     TAB 2: REFERENCE
+═══════════════════════════════════════════════ -->
+<div id="tab-reference" class="tab-panel">
+
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    <input type="text" id="search" placeholder="Search flags, options…" autocomplete="off">
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="dot dot-ink"></span>Basic Syntax</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Component</th><th>Description</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>find</code></td><td>The command itself</td><td><code>find</code></td></tr>
+        <tr><td><code>[path]</code></td><td>Starting directory (defaults to <code>.</code>)</td><td><code>/home /var/log .</code></td></tr>
+        <tr><td><code>[expression]</code></td><td>Tests, options, actions — evaluated left to right</td><td><code>-type f -name "*.sh"</code></td></tr>
+        <tr><td><code>[action]</code></td><td>What to do with results. Default is <code>-print</code></td><td><code>-exec rm {} \;</code></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="col2">
+      <div>
+        <div class="section-title"><span class="dot dot-rust"></span>File Type — <code>-type</code></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Matches</th></tr></thead>
+          <tbody>
+            <tr><td><code>-type f</code></td><td>Regular file</td></tr>
+            <tr><td><code>-type d</code></td><td>Directory</td></tr>
+            <tr><td><code>-type l</code></td><td>Symbolic link</td></tr>
+            <tr><td><code>-type b</code></td><td>Block device</td></tr>
+            <tr><td><code>-type c</code></td><td>Character device</td></tr>
+            <tr><td><code>-type p</code></td><td>Named pipe (FIFO)</td></tr>
+            <tr><td><code>-type s</code></td><td>Socket</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <div class="section-title"><span class="dot dot-rust"></span>Name &amp; Pattern</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-name "*.log"</code></td><td>Match by name (case-sensitive)</td></tr>
+            <tr><td><code>-iname "*.LOG"</code></td><td>Case-insensitive name match</td></tr>
+            <tr><td><code>-path "*/tmp/*"</code></td><td>Match full path pattern</td></tr>
+            <tr><td><code>-ipath "*/TMP/*"</code></td><td>Case-insensitive path</td></tr>
+            <tr><td><code>-regex ".*\.sh$"</code></td><td>Full path regex match</td></tr>
+            <tr><td><code>-iregex</code></td><td>Case-insensitive regex</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="dot dot-sage"></span>Time-Based Filters</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Flag</th><th>Meaning</th><th>Example</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td><code>-mtime -N</code></td><td>Modified less than N days ago</td><td><code>-mtime -7</code></td><td>within last week</td></tr>
+        <tr><td><code>-mtime +N</code></td><td>Modified more than N days ago</td><td><code>-mtime +30</code></td><td>older than 30 days</td></tr>
+        <tr><td><code>-atime</code></td><td>Last accessed time (same ±N logic)</td><td><code>-atime -1</code></td><td>accessed today</td></tr>
+        <tr><td><code>-ctime</code></td><td>Status changed (perms, owner)</td><td><code>-ctime -3</code></td><td>changed in 3 days</td></tr>
+        <tr><td><code>-mmin -N</code></td><td>Modified less than N minutes ago</td><td><code>-mmin -60</code></td><td>last hour</td></tr>
+        <tr><td><code>-amin / -cmin</code></td><td>Accessed / changed in N minutes</td><td><code>-amin -30</code></td><td></td></tr>
+        <tr><td><code>-newer file</code></td><td>Newer than a reference file</td><td><code>-newer /tmp/ref</code></td><td>useful in scripts</td></tr>
+        <tr><td><code>-newermt "date"</code></td><td>Modified after a date string</td><td><code>-newermt "2024-01-01"</code></td><td>GNU extension</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="col2">
+      <div>
+        <div class="section-title"><span class="dot dot-navy"></span>Size — <code>-size</code></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-size +100M</code></td><td>Greater than 100 MB</td></tr>
+            <tr><td><code>-size -10k</code></td><td>Less than 10 KB</td></tr>
+            <tr><td><code>-size 1G</code></td><td>Exactly 1 GB</td></tr>
+            <tr><td><code>c</code> suffix</td><td>Bytes</td></tr>
+            <tr><td><code>k</code> suffix</td><td>Kilobytes (1024 B)</td></tr>
+            <tr><td><code>M</code> suffix</td><td>Megabytes</td></tr>
+            <tr><td><code>G</code> suffix</td><td>Gigabytes</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <div class="section-title"><span class="dot dot-navy"></span>Permissions — <code>-perm</code></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-perm 644</code></td><td>Exactly 644</td></tr>
+            <tr><td><code>-perm -644</code></td><td>At minimum 644 (all bits)</td></tr>
+            <tr><td><code>-perm /644</code></td><td>Any of these bits set</td></tr>
+            <tr><td><code>-perm /4000</code></td><td>SUID bit set <span class="tag tag-info">sec</span></td></tr>
+            <tr><td><code>-perm /2000</code></td><td>SGID bit set <span class="tag tag-info">sec</span></td></tr>
+            <tr><td><code>-perm /o+w</code></td><td>World-writable <span class="tag tag-danger">risky</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="col2">
+      <div>
+        <div class="section-title"><span class="dot dot-gold"></span>Owner &amp; Group</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-user root</code></td><td>Owned by user root</td></tr>
+            <tr><td><code>-uid 1000</code></td><td>Owned by UID 1000</td></tr>
+            <tr><td><code>-group www-data</code></td><td>Owned by group</td></tr>
+            <tr><td><code>-gid 33</code></td><td>Owned by GID 33</td></tr>
+            <tr><td><code>-nouser</code></td><td>No matching user in /etc/passwd</td></tr>
+            <tr><td><code>-nogroup</code></td><td>No matching group</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <div class="section-title"><span class="dot dot-gold"></span>Depth &amp; Traversal</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-maxdepth 1</code></td><td>Current directory only</td></tr>
+            <tr><td><code>-maxdepth N</code></td><td>Recurse at most N levels</td></tr>
+            <tr><td><code>-mindepth 1</code></td><td>Skip the starting path itself</td></tr>
+            <tr><td><code>-depth</code></td><td>Process contents before dir</td></tr>
+            <tr><td><code>-xdev</code></td><td>Don't cross filesystem boundaries</td></tr>
+            <tr><td><code>-follow</code></td><td>Follow symbolic links</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="dot dot-rust"></span>Actions</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Action</th><th>Description</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>-print</code></td><td>Print full path (default)</td><td>One result per line</td></tr>
+        <tr><td><code>-print0</code></td><td>Print with null separator</td><td>Safe with spaces — use with <code>xargs -0</code></td></tr>
+        <tr><td><code>-ls</code></td><td>Detailed listing like <code>ls -dils</code></td><td>Shows size, perms, owner</td></tr>
+        <tr><td><code>-delete</code></td><td>Delete matched files <span class="tag tag-danger">destructive</span></td><td>Use <code>-print</code> first to verify</td></tr>
+        <tr><td><code>-exec cmd {} \;</code></td><td>Run command once per match</td><td><code>{}</code> = matched file path</td></tr>
+        <tr><td><code>-exec cmd {} +</code></td><td>Run command with all matches batched</td><td>Faster — like xargs</td></tr>
+        <tr><td><code>-execdir cmd {} \;</code></td><td>Run cmd in file's own directory</td><td>Safer for path handling</td></tr>
+        <tr><td><code>-ok cmd {} \;</code></td><td>Like <code>-exec</code> but prompts first</td><td>Interactive use</td></tr>
+        <tr><td><code>-printf "fmt"</code></td><td>Custom output format</td><td><code>%p</code>=path <code>%s</code>=size <code>%m</code>=perms <code>%u</code>=user</td></tr>
+        <tr><td><code>-quit</code></td><td>Stop after first match</td><td>Existence checks</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="col2">
+      <div>
+        <div class="section-title"><span class="dot dot-sage"></span>Logical Operators</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Operator</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>-and</code> / <code>-a</code></td><td>Both must match (default)</td></tr>
+            <tr><td><code>-or</code> / <code>-o</code></td><td>Either matches</td></tr>
+            <tr><td><code>! expr</code> / <code>-not</code></td><td>Negate expression</td></tr>
+            <tr><td><code>\( expr \)</code></td><td>Group expressions</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <div class="section-title"><span class="dot dot-sage"></span>Misc Flags</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>-empty</code></td><td>Empty files or directories</td></tr>
+            <tr><td><code>-executable</code></td><td>Executable by current user</td></tr>
+            <tr><td><code>-readable</code></td><td>Readable by current user</td></tr>
+            <tr><td><code>-writable</code></td><td>Writable by current user</td></tr>
+            <tr><td><code>-links N</code></td><td>Files with N hard links</td></tr>
+            <tr><td><code>-inum N</code></td><td>File with inode number N</td></tr>
+            <tr><td><code>-samefile f</code></td><td>Same inode as file f</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="dot dot-navy"></span>printf Format Specifiers</div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Format</th><th>Output</th><th>Format</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td><code>%p</code></td><td>File path</td><td><code>%m</code></td><td>Permissions (octal)</td></tr>
+        <tr><td><code>%f</code></td><td>Filename only</td><td><code>%M</code></td><td>Permissions (symbolic)</td></tr>
+        <tr><td><code>%s</code></td><td>File size in bytes</td><td><code>%u</code></td><td>Owner username</td></tr>
+        <tr><td><code>%k</code></td><td>Size in KB</td><td><code>%g</code></td><td>Owner group name</td></tr>
+        <tr><td><code>%T@</code></td><td>Modification time (epoch)</td><td><code>%i</code></td><td>Inode number</td></tr>
+        <tr><td><code>%Tk</code></td><td>Mod time (readable)</td><td><code>%d</code></td><td>Depth in tree</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="dot dot-ink"></span>Common Name Patterns</div>
+    <div class="patterns">
+      <div class="pattern-pill"><code>*.sh</code><span class="pill-desc">shell scripts</span></div>
+      <div class="pattern-pill"><code>*.py</code><span class="pill-desc">python</span></div>
+      <div class="pattern-pill"><code>*.php</code><span class="pill-desc">PHP files</span></div>
+      <div class="pattern-pill"><code>*.conf</code><span class="pill-desc">config files</span></div>
+      <div class="pattern-pill"><code>*.log</code><span class="pill-desc">log files</span></div>
+      <div class="pattern-pill"><code>*.bak</code><span class="pill-desc">backups</span></div>
+      <div class="pattern-pill"><code>.*</code><span class="pill-desc">hidden files</span></div>
+      <div class="pattern-pill"><code>*.key</code><span class="pill-desc">private keys</span></div>
+      <div class="pattern-pill"><code>*.pem</code><span class="pill-desc">certificates</span></div>
+      <div class="pattern-pill"><code>*.sql</code><span class="pill-desc">sql dumps</span></div>
+      <div class="pattern-pill"><code>*.env</code><span class="pill-desc">env files</span></div>
+      <div class="pattern-pill"><code>id_rsa</code><span class="pill-desc">ssh private key</span></div>
+      <div class="pattern-pill"><code>authorized_keys</code><span class="pill-desc">ssh auth</span></div>
+      <div class="pattern-pill"><code>*.pcap</code><span class="pill-desc">packet captures</span></div>
+    </div>
+  </div>
+
+</div><!-- /tab-reference -->
+
+<!-- ═══════════════════════════════════════════════
+     TAB 3: EXAMPLES
+═══════════════════════════════════════════════ -->
+<div id="tab-examples" class="tab-panel">
+  <div class="examples">
+
+    <div class="ex-card" data-tags="suid security root pentest priv esc">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">SUID binary hunting — privilege escalation</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/</span> <span class="c-flag">-type f</span> <span class="c-flag">-perm /4000</span> <span class="c-flag">-user root</span> <span class="c-act">2&gt;/dev/null</span></div>
+      <div class="ex-desc">Find all root-owned SUID binaries. Suppress permission errors. Classic first step in Linux privesc.</div>
+    </div>
+
+    <div class="ex-card" data-tags="large files disk space cleanup size">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Find large files eating disk space</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/</span> <span class="c-flag">-type f</span> <span class="c-flag">-size +100M</span> <span class="c-act">-exec ls -lh {} \;</span> <span class="c-act">2&gt;/dev/null</span></div>
+      <div class="ex-desc">List all files over 100 MB with human-readable sizes. Append <code>| sort -rh</code> to rank them.</div>
+    </div>
+
+    <div class="ex-card" data-tags="incident response IR forensics recently modified mtime">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Incident response — recently modified files</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/var/www /etc /tmp</span> <span class="c-flag">-type f</span> <span class="c-flag">-mtime -1</span> <span class="c-flag">! -path "*/proc/*"</span> <span class="c-act">-ls</span></div>
+      <div class="ex-desc">Files modified in the last 24h in web root, config, and temp dirs. Critical for IR triage.</div>
+    </div>
+
+    <div class="ex-card" data-tags="world writable security hardening audit perm">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Security audit — world-writable files</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/</span> <span class="c-flag">-type f</span> <span class="c-flag">-perm /o+w</span> <span class="c-flag">! -path "*/proc/*"</span> <span class="c-flag">! -path "*/sys/*"</span> <span class="c-act">2&gt;/dev/null</span></div>
+      <div class="ex-desc">Identify world-writable files — common misconfiguration in hardening audits and CTFs.</div>
+    </div>
+
+    <div class="ex-card" data-tags="delete cleanup logs old mtime">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Delete files older than 30 days (safe pattern)</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/var/log/archive</span> <span class="c-flag">-type f</span> <span class="c-flag">-name "*.log"</span> <span class="c-flag">-mtime +30</span> <span class="c-flag">-print</span> <span class="c-act">-delete</span></div>
+      <div class="ex-desc">Dry-run with <code>-print</code> first — remove it once verified. Safer than <code>-delete</code> alone.</div>
+    </div>
+
+    <div class="ex-card" data-tags="xargs grep webshell php exec search">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Hunt for webshells in PHP files</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/var/www</span> <span class="c-flag">-type f</span> <span class="c-flag">-name "*.php"</span> <span class="c-flag">-print0</span> <span class="c-act">| xargs -0 grep -l "eval(base64"</span></div>
+      <div class="ex-desc"><code>-print0</code> + <code>xargs -0</code> safely handles filenames with spaces. Classic webshell indicator.</div>
+    </div>
+
+    <div class="ex-card" data-tags="empty directory cleanup prune dirs">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Remove empty directories recursively</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">.</span> <span class="c-flag">-type d</span> <span class="c-flag">-empty</span> <span class="c-act">-delete</span></div>
+      <div class="ex-desc">Clean up leftover empty folders after deployments or file operations.</div>
+    </div>
+
+    <div class="ex-card" data-tags="orphan nouser nogroup ownership files">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Find orphaned files (no valid owner)</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/home /var</span> <span class="c-flag">-nouser -o -nogroup</span> <span class="c-act">2&gt;/dev/null</span></div>
+      <div class="ex-desc">Detect files left behind by deleted users — useful after account cleanup.</div>
+    </div>
+
+    <div class="ex-card" data-tags="chmod fix permissions batch exec web">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Fix web directory permissions (files + dirs)</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/var/www/html</span> <span class="c-flag">-type f</span> <span class="c-act">-exec chmod 644 {} +</span> <span class="c-act">&amp;&amp;</span> <span class="c-find">find</span> <span class="c-path">/var/www/html</span> <span class="c-flag">-type d</span> <span class="c-act">-exec chmod 755 {} +</span></div>
+      <div class="ex-desc">Standard web hardening: 644 for files, 755 for directories. <code>+</code> batches for speed.</div>
+    </div>
+
+    <div class="ex-card" data-tags="hidden dot files config ssh history">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Find hidden files in home directories</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/home</span> <span class="c-flag">-maxdepth 3</span> <span class="c-flag">-name ".*"</span> <span class="c-flag">-type f</span> <span class="c-act">-ls</span></div>
+      <div class="ex-desc">Discover <code>.bash_history</code>, <code>.ssh/config</code>, <code>.env</code> files for security review.</div>
+    </div>
+
+    <div class="ex-card" data-tags="private key ssh pem rsa credentials secret">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Hunt for private keys and credentials</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/</span> <span class="c-flag">-type f</span> <span class="c-flag">\( -name "id_rsa" -o -name "*.pem" -o -name "*.key" \)</span> <span class="c-act">2&gt;/dev/null</span></div>
+      <div class="ex-desc">Locate SSH private keys and certificates. Commonly found in CTF challenges and misconfigured servers.</div>
+    </div>
+
+    <div class="ex-card" data-tags="no extension binary executable files">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Find executable files not in standard paths</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/tmp /var/tmp /dev/shm</span> <span class="c-flag">-type f</span> <span class="c-flag">-executable</span> <span class="c-act">-ls</span> <span class="c-act">2&gt;/dev/null</span></div>
+      <div class="ex-desc">Malware and droppers often live in writable temp dirs. Check these during IR investigations.</div>
+    </div>
+
+    <div class="ex-card" data-tags="wazuh soc log monitoring config file changed">
+      <button class="ex-copy" onclick="copyEx(this)">copy</button>
+      <div class="ex-lbl">Monitor config changes (SOC / FIM baseline)</div>
+      <div class="ex-cmd"><span class="c-find">find</span> <span class="c-path">/etc</span> <span class="c-flag">-type f</span> <span class="c-flag">-newer /tmp/baseline_marker</span> <span class="c-flag">-not -name "*.swp"</span> <span class="c-act">-printf "%T@ %p\n"</span> <span class="c-act">| sort -n</span></div>
+      <div class="ex-desc">Compare against a baseline file. Use <code>touch /tmp/baseline_marker</code> to set the reference point.</div>
+    </div>
+
+  </div>
+</div><!-- /tab-examples -->
+
+<footer>
+  <span>linux find cheat sheet · GNU findutils · 4jai.net</span>
+  <span>open in browser for full functionality</span>
+</footer>
+
+</div><!-- /page -->
+
+<script>
+/* ── STATE ── */
+const opts = {};
+['iname','not','empty','executable','readable','writable','nouser','nogroup','xdev','follow'].forEach(k => opts[k] = false);
+
+/* ── TABS ── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── TOGGLES ── */
+function toggleOpt(k) {
+  opts[k] = !opts[k];
+  document.getElementById('tog-' + k).classList.toggle('on', opts[k]);
+  build();
+}
+
+/* ── CONDITIONAL SHOWS ── */
+function permChange() {
+  const v = document.getElementById('b-perm').value;
+  document.getElementById('b-perm-custom').style.display = v === 'custom' ? 'block' : 'none';
+  build();
+}
+function actionChange() {
+  const v = document.getElementById('b-action').value;
+  const needsCmd = ['exec_semi','exec_plus','execdir','ok'].some(x => v.includes(x));
+  document.getElementById('b-exec-cmd').style.display = needsCmd ? 'block' : 'none';
+  document.getElementById('b-printf-fmt').style.display = v === '-printf' ? 'block' : 'none';
+  build();
+}
+function pipeChange() {
+  const v = document.getElementById('b-pipe').value;
+  document.getElementById('b-pipe-custom').style.display = v === 'custom' ? 'block' : 'none';
+  build();
+}
+
+/* ── BUILD ── */
+function span(cls, txt) { return `<span class="${cls}">${txt}</span>`; }
+
+function build() {
+  const path     = document.getElementById('b-path').value.trim() || '.';
+  const type     = document.getElementById('b-type').value;
+  const nameVal  = document.getElementById('b-name').value.trim();
+  const maxd     = document.getElementById('b-maxdepth').value;
+  const mind     = document.getElementById('b-mindepth').value;
+  const mtimeOp  = document.getElementById('b-mtime-op').value;
+  const mtimeVal = document.getElementById('b-mtime-val').value.trim();
+  const mminOp   = document.getElementById('b-mmin-op').value;
+  const mminVal  = document.getElementById('b-mmin-val').value.trim();
+  const sizeOp   = document.getElementById('b-size-op').value;
+  const sizeVal  = document.getElementById('b-size-val').value.trim();
+  const sizeUnit = document.getElementById('b-size-unit').value;
+  const permSel  = document.getElementById('b-perm').value;
+  const permCust = document.getElementById('b-perm-custom').value.trim();
+  const user     = document.getElementById('b-user').value.trim();
+  const group    = document.getElementById('b-group').value.trim();
+  const action   = document.getElementById('b-action').value;
+  const execCmd  = document.getElementById('b-exec-cmd').value.trim() || 'COMMAND';
+  const printfFmt= document.getElementById('b-printf-fmt').value.trim() || '"%p %s\\n"';
+  const pipeSel  = document.getElementById('b-pipe').value;
+  const pipeCust = document.getElementById('b-pipe-custom').value.trim();
+  const newerDate= document.getElementById('b-newer-date').value;
+
+  let parts = [];
+  const notPfx = opts.not ? span('c-flag','! ') : '';
+
+  parts.push(span('c-base','find'));
+  parts.push(span('c-path', path));
+
+  if (maxd) parts.push(span('c-flag','-maxdepth') + ' ' + span('c-val', maxd));
+  if (mind) parts.push(span('c-flag','-mindepth') + ' ' + span('c-val', mind));
+  if (type) parts.push(span('c-flag','-type') + ' ' + span('c-val', type));
+
+  if (nameVal) {
+    const nf = opts.iname ? '-iname' : '-name';
+    const q  = nameVal.startsWith('"') ? nameVal : '"' + nameVal + '"';
+    parts.push(notPfx + span('c-flag', nf) + ' ' + span('c-val', q));
+  }
+
+  if (mtimeOp && mtimeVal) parts.push(span('c-flag','-mtime') + ' ' + span('c-val', mtimeOp + mtimeVal));
+  if (mminOp  && mminVal)  parts.push(span('c-flag','-mmin')  + ' ' + span('c-val', mminOp  + mminVal));
+  if (sizeOp  && sizeVal)  parts.push(span('c-flag','-size')  + ' ' + span('c-val', sizeOp  + sizeVal + sizeUnit));
+  if (newerDate)           parts.push(span('c-flag','-newermt') + ' ' + span('c-val','"' + newerDate + '"'));
+
+  if (permSel === 'custom' && permCust) {
+    parts.push(span('c-flag', permCust));
+  } else if (permSel && permSel !== 'custom') {
+    if (['/4000','/2000','/6000','/o+w'].includes(permSel)) {
+      parts.push(span('c-flag','-perm') + ' ' + span('c-val', permSel));
+    } else if (permSel.startsWith('-')) {
+      parts.push(span('c-flag','-perm') + ' ' + span('c-val', permSel));
+    } else {
+      parts.push(span('c-flag','-perm') + ' ' + span('c-val', permSel));
+    }
+  }
+
+  if (user)  parts.push(span('c-flag','-user')  + ' ' + span('c-val', user));
+  if (group) parts.push(span('c-flag','-group') + ' ' + span('c-val', group));
+
+  if (opts.empty)      parts.push(span('c-flag','-empty'));
+  if (opts.executable) parts.push(span('c-flag','-executable'));
+  if (opts.readable)   parts.push(span('c-flag','-readable'));
+  if (opts.writable)   parts.push(span('c-flag','-writable'));
+  if (opts.nouser)     parts.push(span('c-flag','-nouser'));
+  if (opts.nogroup)    parts.push(span('c-flag','-nogroup'));
+  if (opts.xdev)       parts.push(span('c-flag','-xdev'));
+  if (opts.follow)     parts.push(span('c-flag','-follow'));
+
+  if (action === '-exec_semi') {
+    parts.push(span('c-act','-exec') + ' ' + span('c-val', execCmd) + ' ' + span('c-val','{}') + ' ' + span('c-act','\\;'));
+  } else if (action === '-exec_plus') {
+    parts.push(span('c-act','-exec') + ' ' + span('c-val', execCmd) + ' ' + span('c-val','{}') + ' ' + span('c-act','+'));
+  } else if (action === '-execdir') {
+    parts.push(span('c-act','-execdir') + ' ' + span('c-val', execCmd) + ' ' + span('c-val','{}') + ' ' + span('c-act','\\;'));
+  } else if (action === '-ok') {
+    parts.push(span('c-act','-ok') + ' ' + span('c-val', execCmd) + ' ' + span('c-val','{}') + ' ' + span('c-act','\\;'));
+  } else if (action === '-printf') {
+    parts.push(span('c-act','-printf') + ' ' + span('c-val', printfFmt));
+  } else if (action) {
+    parts.push(span('c-act', action));
+  }
+
+  let cmd = parts.join(' ');
+  const pipe = pipeSel === 'custom' ? pipeCust : pipeSel;
+  if (pipe) cmd += ' ' + span('c-act', pipe);
+
+  document.getElementById('cmd-display').innerHTML = cmd || span('c-flag','find . -print');
+}
+
+/* ── PRESETS ── */
+function applyPreset(p) {
+  resetAll(true);
+  const P = {
+    suid:       () => { set('b-type','f'); set('b-perm','/4000'); set('b-user','root'); set('b-pipe','2>/dev/null'); },
+    worldwrite: () => { set('b-type','f'); set('b-perm','/o+w'); set('b-pipe','2>/dev/null'); },
+    recent:     () => { set('b-type','f'); set('b-mtime-op','-'); set('b-mtime-val','7'); },
+    largefiles: () => { set('b-type','f'); set('b-size-op','+'); set('b-size-val','100'); set('b-size-unit','M'); set('b-action','-exec_semi'); set('b-exec-cmd','ls -lh'); document.getElementById('b-exec-cmd').style.display='block'; },
+    emptydir:   () => { set('b-type','d'); toggleOn('empty'); },
+    logs:       () => { set('b-path','/var/log'); set('b-type','f'); set('b-name','*.log'); },
+    hidden:     () => { set('b-type','f'); set('b-name','.*'); set('b-maxdepth','3'); },
+    py:         () => { set('b-type','f'); set('b-name','*.py'); },
+    owned:      () => { set('b-type','f'); set('b-user','www-data'); },
+    execs:      () => { set('b-type','f'); toggleOn('executable'); },
+    orphan:     () => { toggleOn('nouser'); set('b-pipe','2>/dev/null'); },
+    keys:       () => { set('b-type','f'); set('b-name','*.pem'); set('b-pipe','2>/dev/null'); },
+  };
+  if (P[p]) { P[p](); build(); }
+}
+
+function set(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function toggleOn(k) {
+  if (!opts[k]) { opts[k] = true; document.getElementById('tog-' + k).classList.add('on'); }
+}
+
+function resetAll(silent) {
+  ['b-path','b-name','b-mtime-val','b-mmin-val','b-size-val','b-user','b-group','b-exec-cmd','b-printf-fmt','b-pipe-custom','b-perm-custom','b-newer-date'].forEach(id => set(id, id==='b-path'?'.':''));
+  ['b-type','b-maxdepth','b-mindepth','b-mtime-op','b-mmin-op','b-size-op','b-size-unit','b-perm','b-action','b-pipe'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  set('b-size-unit','k');
+  ['b-perm-custom','b-exec-cmd','b-printf-fmt','b-pipe-custom'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  Object.keys(opts).forEach(k => { opts[k]=false; const el=document.getElementById('tog-'+k); if(el) el.classList.remove('on'); });
+  if (!silent) build();
+}
+
+/* ── COPY ── */
+function copyCmd() {
+  const text = document.getElementById('cmd-display').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✓ copied!';
+    setTimeout(() => btn.textContent = orig, 1600);
+  });
+}
+function copyEx(btn) {
+  const text = btn.closest('.ex-card').querySelector('.ex-cmd').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = 'copy', 1500);
+  });
+}
+
+/* ── SEARCH (reference tab) ── */
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('tbody tr').forEach(row => {
+    row.classList.toggle('hidden-row', q && !row.textContent.toLowerCase().includes(q));
+  });
+});
+
+build();
+</script>
+</body>
+</html>
